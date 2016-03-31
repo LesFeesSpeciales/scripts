@@ -1,6 +1,6 @@
-# tools
+# scripts
 
-Set of various tools used in Production or proof of concepts
+Various more or less adhoc scripts, used in production or proof of concepts.
 
 
 # License
