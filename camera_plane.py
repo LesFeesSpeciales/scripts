@@ -112,7 +112,7 @@ class IMPORT_OT_Camera_Plane(bpy.types.Operator, ImportHelper):
 
         # Custom property distance
         prop = rna_idprop_ui_prop_get(plane, "distance", create=True)
-        plane["distance"] = 10.0
+        plane["distance"] = 25.0
         prop["soft_min"] = 0
         prop["soft_max"] = 10000
         prop["min"] = 0
