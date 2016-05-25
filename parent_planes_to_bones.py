@@ -11,6 +11,7 @@ bl_info = {
     }
 
 import bpy
+import re
 from bpy.types import Operator
 
 #obj = bpy.context.object
@@ -18,7 +19,17 @@ from bpy.types import Operator
 #planes = bpy.context.selected_objects
 #planes.remove(obj)
 
-suffix_hierarchy = {
+def strip_numbers(name):
+    """ Returns the name with trailing numbers stripped from it.
+    """
+    # regexp = re.compile("\.[0-9]+$")
+    matches = re.findall("\.[0-9]+$", name)
+    if matches:
+        return name[:-len(matches[-1])]
+    else:
+        return name
+
+SUFFIX_HIERARCHY = {
     ".L": "_gauche",
     ".R": "_droit"
 }
@@ -35,15 +46,17 @@ def parent_planes_to_bones(self, context):
             if bone_name[:4] == 'DEF-':
                 bone_name = bone_name[4:]
             if bone_name[-2:] in ['.L', '.R']:
-#                print(b.name[4:-2])
                 obj_name, suffix = bone_name[:-2].replace(' ', '_'), bone_name[-2:]
+                print(obj_name)
                 # Check for object existing
                 if not obj_name in bpy.data.objects:
-                    if not obj_name + suffix_hierarchy[suffix] in bpy.data.objects:
-                        self.report({"WARNING"}, "Could not find object %s" % obj_name)
-                        continue
+                    if obj_name + SUFFIX_HIERARCHY[suffix] in bpy.data.objects:
+                        obj_name = obj_name + SUFFIX_HIERARCHY[suffix]
+                    elif obj_name + suffix in bpy.data.objects:
+                        obj_name = obj_name + suffix
                     else:
-                        obj_name = obj_name + suffix_hierarchy[suffix]
+                        self.report({"WARNING"}, "Could not find object %s (L-R)" % obj_name)
+                        continue
                 
                 p = bpy.data.objects[obj_name]
                 
@@ -61,13 +74,16 @@ def parent_planes_to_bones(self, context):
                 if not bone_name in bpy.data.objects:
                     self.report({"WARNING"}, "Could not find object %s" % bone_name)
                     continue
-                p = bpy.data.objects[bone_name[:]]
+                p = bpy.data.objects[bone_name]
                 mat = p.matrix_world.copy()
 
             p.parent = obj
             p.parent_type = 'BONE'
             p.parent_bone = b.name
             p.matrix_world = mat
+            p.hide_select = True
+
+            p.name = strip_numbers(p.name)
                 
 #                print("Could not connect", s.name)
     obj.data.pose_position = initial_position
