@@ -110,13 +110,20 @@ class IMPORT_OT_Camera_Plane(bpy.types.Operator, ImportHelper):
         plane.lock_rotation = (True,)*3
         plane.lock_scale    = (True,)*3
 
-        # Custom property distance
+        # Custom properties
         prop = rna_idprop_ui_prop_get(plane, "distance", create=True)
         plane["distance"] = 25.0
         prop["soft_min"] = 0
         prop["soft_max"] = 10000
         prop["min"] = 0
         prop["max"] = 1000
+
+        prop = rna_idprop_ui_prop_get(plane, "passepartout", create=True)
+        plane["passepartout"] = 1.2
+        prop["soft_min"] = 0
+        prop["soft_max"] = 100
+        prop["min"] = 0
+        prop["max"] = 100
         
         
         # DRIVERS
@@ -157,27 +164,33 @@ class IMPORT_OT_Camera_Plane(bpy.types.Operator, ImportHelper):
             var = driver.driver.variables.new()
             # variable name
             var.name = "distance"
-
             # variable type
             var.type = 'SINGLE_PROP'
             var.targets[0].id = plane
             var.targets[0].data_path = '["distance"]'
 
-
             # Variable FOV
             var = driver.driver.variables.new()
             # variable name
             var.name = "FOV"
-
             # variable type
             var.type = 'SINGLE_PROP'
             var.targets[0].id_type = "CAMERA"
             var.targets[0].id = cam.data
             var.targets[0].data_path = 'angle'
 
+            # Variable passepartout
+            var = driver.driver.variables.new()
+            # variable name
+            var.name = "passepartout"
+            # variable type
+            var.type = 'SINGLE_PROP'
+            var.targets[0].id = plane
+            var.targets[0].data_path = '["passepartout"]'
+
 
             # Expression
-            driver.driver.expression = "tan(FOV/2)*distance*2"
+            driver.driver.expression = "tan(FOV/2) * distance*2 * passepartout"
 
         return {'FINISHED'}
      
