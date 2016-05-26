@@ -119,7 +119,7 @@ class IMPORT_OT_Camera_Plane(bpy.types.Operator, ImportHelper):
         prop["max"] = 1000
 
         prop = rna_idprop_ui_prop_get(plane, "passepartout", create=True)
-        plane["passepartout"] = 1.2
+        plane["passepartout"] = 1.1318359375
         prop["soft_min"] = 0
         prop["soft_max"] = 100
         prop["min"] = 0
