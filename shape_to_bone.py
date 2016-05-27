@@ -50,7 +50,7 @@ def main(context):
     obj = selected[0]
     pbone = context.active_pose_bone
 
-    mesh_name = 'WGT_' + pbone.name
+    mesh_name = 'WGT-' + pbone.name
 
     if mesh_name in context.scene.objects:
         context.scene.objects.unlink(context.scene.objects[mesh_name])
