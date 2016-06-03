@@ -1,4 +1,4 @@
-# Copyright Les Fees Speciales 2015
+# Copyright Les Fees Speciales 2016
 # 
 # voeu@les-fees-speciales.coop
 # 
@@ -62,7 +62,6 @@ def main(context):
     obj_copy.name = mesh_name
     context.scene.objects.link(obj_copy)
 
-#    obj_copy.matrix_world.identity()
     obj_copy.layers = [False if i != 19 else True for i in range(20)]
 
     b_length = pbone.bone.length
@@ -99,13 +98,10 @@ def edit_bone_shape(context):
 
     shape_object.layers = context.object.layers
 
-    #XXX TODO MOFO
-    shape_object.matrix_world = (pbone.bone.length) * context.object.matrix_world * pbone.matrix# * (pbone.bone.length)
     shape_object.location = pbone.head
-    #shape_object.matrix_world = context.object.matrix_world * pbone.matrix * shape_object.matrix_world.inverted() * (pbone.bone.length) * shape_object.matrix_world
+    shape_object.matrix_world = (pbone.bone.length) * context.object.matrix_world * pbone.matrix
     shape_object.hide = False
 
-#    bpy.ops.object.mode_set(mode='OBJECT')
     context.object.select = False
     context.scene.objects.active = shape_object
     bpy.ops.object.mode_set(mode='EDIT')
@@ -136,8 +132,10 @@ class ShapeToBonePanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-
         col = layout.column(align=True)
+        if len(context.selected_objects) != 2:
+            col.label('Please select one mesh object,', icon='ERROR')
+            col.label('then the bone in Pose Mode')
         col.operator("pose.shape_to_bone")
         col.operator("pose.edit_bone_shape")
 
