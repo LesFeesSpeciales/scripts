@@ -110,12 +110,16 @@ class VIEW3D_PT_parent_planes_to_bones(bpy.types.Panel):
     bl_category = 'Tools'
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
+    
+    @classmethod
+    def poll(self, context):
+        return context.object and context.object.type == 'ARMATURE'
 
     def draw(self, context):
         obj = context.active_object
-        if obj is not None:
-            r = self.layout.row()
-            r.operator("rigging.parent_planes_to_bones")
+        r = self.layout.row()
+        r.active = obj is not None
+        r.operator("rigging.parent_planes_to_bones")
 
 def register():
     bpy.utils.register_class(OBJECT_OT_parent_planes_to_bones)
