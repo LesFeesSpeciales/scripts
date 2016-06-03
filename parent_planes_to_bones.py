@@ -77,13 +77,12 @@ def parent_planes_to_bones(self, context):
                 bone_name = bone_name[4:]
             if bone_name[-2:] in ['.L', '.R']:
                 obj_name, suffix = bone_name[:-2].replace(' ', '_'), bone_name[-2:]
-                print(obj_name)
                 # Check for object existing
                 if not obj_name in bpy.data.objects:
-                    if obj_name + SUFFIX_HIERARCHY[suffix] in bpy.data.objects:
-                        obj_name = obj_name + SUFFIX_HIERARCHY[suffix]
-                    elif obj_name + suffix in bpy.data.objects:
+                    if obj_name + suffix in bpy.data.objects:
                         obj_name = obj_name + suffix
+                    elif obj_name + SUFFIX_HIERARCHY[suffix] in bpy.data.objects:
+                        obj_name = obj_name + SUFFIX_HIERARCHY[suffix]
                     else:
                         self.report({"WARNING"}, "Could not find object %s (L-R)" % obj_name)
                         continue
@@ -91,14 +90,14 @@ def parent_planes_to_bones(self, context):
                 p = bpy.data.objects[obj_name]
                 
                 # Check that object is not already parented
-                if bone_name in context.scene.objects and context.scene.objects[bone_name].parent == obj and context.scene.objects[bone_name].parent_bone == b.name:
+                if bone_name in context.scene.objects and (context.scene.objects[bone_name].parent == obj and context.scene.objects[bone_name].parent_bone == b.name):
                     self.report({"WARNING"}, "Object %s already child of bone %s" % (obj_name, b.name))
                     continue
                 
                 mat = p.matrix_world.copy()
                 if p.name in bpy.context.scene.objects:
                     bpy.context.scene.objects.unlink(p)
-                p = bpy.data.objects.new(bone_name[:], p.data)
+                p = bpy.data.objects.new(obj_name[:], p.data)
                 bpy.context.scene.objects.link(p)
             else:
                 if not bone_name in bpy.data.objects:
