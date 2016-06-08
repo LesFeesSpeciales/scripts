@@ -78,14 +78,17 @@ def parent_planes_to_bones(self, context):
             if bone_name[-2:] in ['.L', '.R']:
                 obj_name, suffix = bone_name[:-2].replace(' ', '_'), bone_name[-2:]
                 # Check for object existing
-                if not obj_name in bpy.data.objects:
-                    if obj_name + suffix in bpy.data.objects:
-                        obj_name = obj_name + suffix
-                    elif obj_name + SUFFIX_HIERARCHY[suffix] in bpy.data.objects:
-                        obj_name = obj_name + SUFFIX_HIERARCHY[suffix]
-                    else:
-                        self.report({"WARNING"}, "Could not find object %s (L-R)" % obj_name)
-                        continue
+                if obj_name + suffix in bpy.data.objects:
+                    obj_name += suffix
+                    new_name = obj_name
+                elif obj_name + SUFFIX_HIERARCHY[suffix] in bpy.data.objects:
+                    obj_name += SUFFIX_HIERARCHY[suffix]
+                    new_name = obj_name
+                elif obj_name in bpy.data.objects:
+                    new_name = obj_name + suffix
+                else:
+                    self.report({"WARNING"}, "Could not find object %s (%s)" % (obj_name, suffix))
+                    continue
                 
                 p = bpy.data.objects[obj_name]
                 
@@ -95,9 +98,11 @@ def parent_planes_to_bones(self, context):
                     continue
                 
                 mat = p.matrix_world.copy()
-                if p.name in bpy.context.scene.objects:
-                    bpy.context.scene.objects.unlink(p)
-                p = bpy.data.objects.new(obj_name[:], p.data)
+                if new_name in bpy.context.scene.objects:
+                    bpy.context.scene.objects.unlink(bpy.data.objects[new_name])
+                if obj_name in bpy.context.scene.objects:
+                    bpy.context.scene.objects.unlink(bpy.data.objects[obj_name])
+                p = bpy.data.objects.new(new_name, p.data)
                 bpy.context.scene.objects.link(p)
             else:
                 if not bone_name in bpy.data.objects:
@@ -128,54 +133,9 @@ def unparent_planes_from_bones(self, context):
         child.parent = None
         child.matrix_world = mat
 
-#     for b in obj.data.bones:
-#         if b.use_deform:
-# #            print(b.name[4:])
-#             bone_name = b.name
-#             if bone_name[:4] == 'DEF-':
-#                 bone_name = bone_name[4:]
-#             if bone_name[-2:] in ['.L', '.R']:
-#                 obj_name, suffix = bone_name[:-2].replace(' ', '_'), bone_name[-2:]
-#                 print(obj_name)
-#                 # Check for object existing
-#                 if not obj_name in bpy.data.objects:
-#                     if obj_name + SUFFIX_HIERARCHY[suffix] in bpy.data.objects:
-#                         obj_name = obj_name + SUFFIX_HIERARCHY[suffix]
-#                     elif obj_name + suffix in bpy.data.objects:
-#                         obj_name = obj_name + suffix
-#                     else:
-#                         self.report({"WARNING"}, "Could not find object %s (L-R)" % obj_name)
-#                         continue
-                
-#                 p = bpy.data.objects[obj_name]
-                
-#                 # Check that object is not already parented
-#                 if bone_name in context.scene.objects and context.scene.objects[bone_name].parent == obj and context.scene.objects[bone_name].parent_bone == b.name:
-#                     self.report({"WARNING"}, "Object %s already child of bone %s" % (obj_name, b.name))
-#                     continue
-                
-#                 mat = p.matrix_world.copy()
-#                 if p.name in bpy.context.scene.objects:
-#                     bpy.context.scene.objects.unlink(p)
-#                 p = bpy.data.objects.new(bone_name[:], p.data)
-#                 bpy.context.scene.objects.link(p)
-#             else:
-#                 if not bone_name in bpy.data.objects:
-#                     self.report({"WARNING"}, "Could not find object %s" % bone_name)
-#                     continue
-#                 p = bpy.data.objects[bone_name]
-#                 mat = p.matrix_world.copy()
-
-#             p.parent = obj
-#             p.parent_type = 'BONE'
-#             p.parent_bone = b.name
-#             p.matrix_world = mat
-#             p.hide_select = True
-
-#             p.name = strip_numbers(p.name)
-                
-# #                print("Could not connect", s.name)
     obj.data.pose_position = initial_position
+
+    obj.hide_select = False
 
 
 class OBJECT_OT_parent_planes_to_bones(Operator):
