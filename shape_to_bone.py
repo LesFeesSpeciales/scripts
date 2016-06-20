@@ -98,8 +98,8 @@ def edit_bone_shape(context):
 
     shape_object.layers = context.object.layers
 
-    shape_object.location = pbone.head
     shape_object.matrix_world = (pbone.bone.length) * context.object.matrix_world * pbone.matrix
+    shape_object.location = context.object.matrix_world * pbone.head
     shape_object.hide = False
 
     context.object.select = False
