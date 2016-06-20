@@ -105,10 +105,10 @@ def parent_planes_to_bones(self, context):
                 p = bpy.data.objects.new(new_name, p.data)
                 bpy.context.scene.objects.link(p)
             else:
-                if not bone_name in bpy.data.objects:
+                if not bone_name.replace(' ', '_') in bpy.data.objects:
                     self.report({"WARNING"}, "Could not find object %s" % bone_name)
                     continue
-                p = bpy.data.objects[bone_name]
+                p = bpy.data.objects[bone_name.replace(' ', '_')]
                 mat = p.matrix_world.copy()
 
             p.parent = obj
