@@ -43,6 +43,7 @@ bl_info = {
 import bpy
 import re
 from bpy.types import Operator
+# from mathutils import Matrix
 
 #obj = bpy.context.object
 
@@ -65,11 +66,13 @@ SUFFIX_HIERARCHY = {
 }
 
 def parent_planes_to_bones(self, context):
-    obj = context.object
-    initial_position = obj.data.pose_position
-    obj.data.pose_position = 'REST'
+    arm = context.object
+    initial_position = arm.data.pose_position
+    arm.data.pose_position = 'REST'
     context.scene.update()
-    for b in obj.data.bones:
+
+    plane_meshes = []
+    for b in arm.data.bones:
         if b.use_deform:
 #            print(b.name[4:])
             bone_name = b.name
@@ -82,8 +85,8 @@ def parent_planes_to_bones(self, context):
                     obj_name += suffix
                     new_name = obj_name
                 elif obj_name + SUFFIX_HIERARCHY[suffix] in bpy.data.objects:
+                    new_name = obj_name + suffix
                     obj_name += SUFFIX_HIERARCHY[suffix]
-                    new_name = obj_name
                 elif obj_name in bpy.data.objects:
                     new_name = obj_name + suffix
                 else:
@@ -93,49 +96,90 @@ def parent_planes_to_bones(self, context):
                 p = bpy.data.objects[obj_name]
                 
                 # Check that object is not already parented
-                if bone_name in context.scene.objects and (context.scene.objects[bone_name].parent == obj and context.scene.objects[bone_name].parent_bone == b.name):
+                if bone_name.replace(' ', '_') in context.scene.objects and (context.scene.objects[bone_name.replace(' ', '_')].parent == arm and context.scene.objects[bone_name.replace(' ', '_')].parent_bone == b.name):
                     self.report({"WARNING"}, "Object %s already child of bone %s" % (obj_name, b.name))
                     continue
-                
-                mat = p.matrix_world.copy()
                 if new_name in bpy.context.scene.objects:
-                    bpy.context.scene.objects.unlink(bpy.data.objects[new_name])
-                if obj_name in bpy.context.scene.objects:
-                    bpy.context.scene.objects.unlink(bpy.data.objects[obj_name])
-                p = bpy.data.objects.new(new_name, p.data)
-                bpy.context.scene.objects.link(p)
+                    p = bpy.data.objects[new_name]
+                    # bpy.context.scene.objects.unlink(bpy.data.objects[new_name])
+                elif obj_name in bpy.data.objects:
+                    do_reapply_mat = False
+                    grps = p.users_group
+                    for g in grps:
+                        g.objects.unlink(p)
+                    if obj_name in bpy.context.scene.objects:
+                        do_reapply_mat = True
+                        mat = p.matrix_world.copy()
+                        bpy.context.scene.objects.unlink(bpy.data.objects[obj_name])
+                        bpy.data.objects[obj_name].user_clear()
+                    p = bpy.data.objects.new(new_name, p.data)
+                    bpy.context.scene.objects.link(p)
+                    for g in grps:
+                        g.objects.link(p)
+                    if do_reapply_mat:
+                        p.matrix_world = mat
+
+
+                # elif obj_name in bpy.context.scene.objects: # copy original object
+                #     mat = p.matrix_world.copy()
+                #     bpy.context.scene.objects.unlink(bpy.data.objects[obj_name])
+                #     bpy.data.objects[obj_name].user_clear()
+                #     p = bpy.data.objects.new(new_name, p.data)
+                #     bpy.context.scene.objects.link(p)
+                #     p.matrix_world = mat
+                # elif obj_name in bpy.data.objects: # copy original object
+                #     # mat = p.matrix_world.copy()
+                #     # bpy.context.scene.objects.unlink(bpy.data.objects[obj_name])
+                #     # bpy.data.objects[obj_name].user_clear()
+                #     p = bpy.data.objects.new(new_name, p.data)
+                #     bpy.context.scene.objects.link(p)
+                #     # p.matrix_world = mat
+                #     print(obj_name)
             else:
                 if not bone_name.replace(' ', '_') in bpy.data.objects:
                     self.report({"WARNING"}, "Could not find object %s" % bone_name)
                     continue
                 p = bpy.data.objects[bone_name.replace(' ', '_')]
-                mat = p.matrix_world.copy()
 
-            p.parent = obj
+            mat = p.matrix_world.copy()
+
+            p.parent = arm
             p.parent_type = 'BONE'
             p.parent_bone = b.name
             p.matrix_world = mat
             p.hide_select = True
-
             p.name = strip_numbers(p.name)
+            
+            # Fix for shear matrix: set the plane's space to the parent bone's
+            parent_pbone = arm.pose.bones[b.name]
+            # print(parent_pbone)
+            if not p.data in plane_meshes: # mesh has not yet been processed
+                for v in p.data.vertices:
+                    v.co = (arm.matrix_world * parent_pbone.matrix).inverted() * mat * v.co
+                plane_meshes.append(p.data)
+            # else:
+            #     print(p.name)
+            p.matrix_world = arm.matrix_world * parent_pbone.matrix
+    # print(plane_meshes)
+
                 
 #                print("Could not connect", s.name)
-    obj.data.pose_position = initial_position
+    arm.data.pose_position = initial_position
 
 def unparent_planes_from_bones(self, context):
-    obj = context.object
-    initial_position = obj.data.pose_position
-    obj.data.pose_position = 'REST'
+    arm = context.object
+    initial_position = arm.data.pose_position
+    arm.data.pose_position = 'REST'
     context.scene.update()
 
-    for child in obj.children:
+    for child in arm.children:
         mat = child.matrix_world.copy()
         child.parent = None
         child.matrix_world = mat
+        child.hide_select = False
 
-    obj.data.pose_position = initial_position
+    arm.data.pose_position = initial_position
 
-    obj.hide_select = False
 
 
 class OBJECT_OT_parent_planes_to_bones(Operator):
