@@ -215,7 +215,7 @@ def create_visibility_drivers(obj, arm, prop_name, value):
 def find_bone_children(arm, bone_name):
     return [child for child in arm.children if child.parent_bone == bone_name]
 
-class OBJECT_OT_add_new_variations(Operator):
+class OBJECT_OT_add_new_plane_variations(Operator):
     """Parent planes to bones"""
     bl_idname = "rigging.add_new_plane_variations"
     bl_label = "Add new plane variations"
@@ -231,6 +231,9 @@ class OBJECT_OT_add_new_variations(Operator):
         planes.remove(arm)
         # plane = plane[0]
         pbone = context.active_pose_bone
+        if not pbone.name.startswith("DEF-"):
+            self.report({"ERROR"}, 'Bone must start with "DEF-"')
+            return {'CANCELLED'}
 
         # Check if custom prop exists in armature object, else create it
         prop_name = "variation_{}".format(pbone.name[4:])
@@ -263,10 +266,89 @@ class OBJECT_OT_add_new_variations(Operator):
             # Create driver
             create_visibility_drivers(plane, arm, prop_name, prop["max"])
             for group in arm.users_group:
-                group.objects.link(plane)
+                if not plane.name in group.objects:
+                    group.objects.link(plane)
         arm.data.pose_position = initial_position
 
         return {'FINISHED'}
+
+def get_prop_value(obj):
+    for driver in obj.animation_data.drivers:
+        if driver.driver.variables[0].name == 'vis':
+            break
+    if driver:
+        prop_value = int(re.findall('[0-9]', driver.driver.expression)[0])
+        return prop_value
+
+def set_prop_value(obj, prop_value):
+    for driver in obj.animation_data.drivers:
+        if driver.driver.variables[0].name == 'vis':
+            # prop_value = int(re.findall('[0-9]', driver.driver.expression)[0])
+            driver.driver.expression = "vis != %s" % prop_value
+    
+class OBJECT_OT_remove_plane_variation(Operator):
+    """Parent planes to bones"""
+    bl_idname = "rigging.remove_plane_variation"
+    bl_label = "Remove plane variations"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(self, context):
+        return context.object and context.object.type != 'ARMATURE'
+    
+    def execute(self, context):
+        planes = context.selected_objects
+
+        for plane in planes:
+            arm = plane.parent
+            if not arm.type == "ARMATURE":
+                self.report({"WARNING"}, "Object %s is not the child of an armature" % plane.name)
+                continue
+            if not plane.animation_data and not plane.animation_data.drivers:
+                self.report({"WARNING"}, "No driver found for object %s" % plane.name)
+                continue
+
+            # Get prop value in vis driver
+            prop_value = get_prop_value(plane)
+
+            # Delete drivers
+            for driver in plane.animation_data.drivers:
+                if driver.data_path.startswith('hide'):
+                    plane.driver_remove(driver.data_path)
+            plane.hide = False
+            plane.hide_render = False
+
+            # Decrement other children's values
+            pbone = plane.parent_bone
+            siblings = find_bone_children(arm, pbone).remove(plane)
+            if siblings:
+                for other in siblings:
+                    other_val = get_prop_value(other)
+                    if other_val > prop_value:
+                        set_prop_value(other, other_val-1)
+
+            # Decrement max prop value
+            prop_name = "variation_{}".format(pbone[4:])
+            prop = rna_idprop_ui_prop_get(arm, prop_name)
+            prop["soft_max"] -= 1
+            prop["max"] -= 1
+
+            # Delete it if there are no variations
+            if prop["max"] == 0:
+
+                del arm[prop_name]
+
+            mat = plane.matrix_world
+            plane.parent = None
+            plane.matrix_world = mat
+
+            
+
+
+        return {'FINISHED'}
+
+
+
 
 
 class OBJECT_OT_unparent_planes_from_bones(Operator):
@@ -291,18 +373,19 @@ class VIEW3D_PT_parent_planes_to_bones(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
     
-    @classmethod
-    def poll(self, context):
-        return context.object and context.object.type == 'ARMATURE'
+    # @classmethod
+    # def poll(self, context):
+    #     return context.object and context.object.type == 'ARMATURE'
 
     def draw(self, context):
         obj = context.active_object
         col = self.layout.column(align=True)
-        col.active = obj is not None
+        # col.active = obj is not None
         col.operator("rigging.parent_planes_to_bones")
         col.operator("rigging.unparent_planes_from_bones")
         col = self.layout.column(align=True)
         col.operator("rigging.add_new_plane_variations")
+        col.operator("rigging.remove_plane_variation")
 
 
 class VIEW3D_PT_rig_plane_variations(bpy.types.Panel):
@@ -327,7 +410,8 @@ class VIEW3D_PT_rig_plane_variations(bpy.types.Panel):
 def register():
     bpy.utils.register_class(OBJECT_OT_parent_planes_to_bones)
     bpy.utils.register_class(OBJECT_OT_unparent_planes_from_bones)
-    bpy.utils.register_class(OBJECT_OT_add_new_variations)
+    bpy.utils.register_class(OBJECT_OT_add_new_plane_variations)
+    bpy.utils.register_class(OBJECT_OT_remove_plane_variation)
     bpy.utils.register_class(VIEW3D_PT_parent_planes_to_bones)
     bpy.utils.register_class(VIEW3D_PT_rig_plane_variations)
 
@@ -335,7 +419,8 @@ def register():
 def unregister():
     bpy.utils.unregister_class(OBJECT_OT_parent_planes_to_bones)
     bpy.utils.unregister_class(OBJECT_OT_unparent_planes_from_bones)
-    bpy.utils.unregister_class(OBJECT_OT_add_new_variations)
+    bpy.utils.unregister_class(OBJECT_OT_add_new_plane_variations)
+    bpy.utils.unregister_class(OBJECT_OT_remove_plane_variation)
     bpy.utils.unregister_class(VIEW3D_PT_parent_planes_to_bones)
     bpy.utils.unregister_class(VIEW3D_PT_rig_plane_variations)
 
