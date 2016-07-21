@@ -43,6 +43,7 @@ bl_info = {
 import bpy
 import re
 from bpy.types import Operator
+from rna_prop_ui import rna_idprop_ui_prop_get
 # from mathutils import Matrix
 
 #obj = bpy.context.object
@@ -64,6 +65,30 @@ SUFFIX_HIERARCHY = {
     ".L": "_gauche",
     ".R": "_droit"
 }
+
+def do_parenting(arm, bone, plane, plane_meshes=None):
+    mat = plane.matrix_world.copy()
+
+    plane.parent = arm
+    plane.parent_type = 'BONE'
+    plane.parent_bone = bone.name
+    plane.matrix_world = mat
+    plane.hide_select = True
+    plane.name = strip_numbers(plane.name)
+    
+    # Fix for shear matrix: set the plane's space to the parent bone's
+    parent_pbone = arm.pose.bones[bone.name]
+    # print(parent_pbone)
+    if plane_meshes is None or not plane.data in plane_meshes: # mesh has not yet been processed
+        for v in plane.data.vertices:
+            v.co = (arm.matrix_world * parent_pbone.matrix).inverted() * mat * v.co
+        if plane_meshes is not None:
+            plane_meshes.append(plane.data)
+    # else:
+    #     print(plane.name)
+    plane.matrix_world = arm.matrix_world * parent_pbone.matrix
+
+    return plane_meshes
 
 def parent_planes_to_bones(self, context):
     arm = context.object
@@ -141,28 +166,8 @@ def parent_planes_to_bones(self, context):
                     continue
                 p = bpy.data.objects[bone_name.replace(' ', '_')]
 
-            mat = p.matrix_world.copy()
+            plane_meshes = do_parenting(arm, b, p, plane_meshes)
 
-            p.parent = arm
-            p.parent_type = 'BONE'
-            p.parent_bone = b.name
-            p.matrix_world = mat
-            p.hide_select = True
-            p.name = strip_numbers(p.name)
-            
-            # Fix for shear matrix: set the plane's space to the parent bone's
-            parent_pbone = arm.pose.bones[b.name]
-            # print(parent_pbone)
-            if not p.data in plane_meshes: # mesh has not yet been processed
-                for v in p.data.vertices:
-                    v.co = (arm.matrix_world * parent_pbone.matrix).inverted() * mat * v.co
-                plane_meshes.append(p.data)
-            # else:
-            #     print(p.name)
-            p.matrix_world = arm.matrix_world * parent_pbone.matrix
-    # print(plane_meshes)
-
-                
 #                print("Could not connect", s.name)
     arm.data.pose_position = initial_position
 
@@ -181,7 +186,6 @@ def unparent_planes_from_bones(self, context):
     arm.data.pose_position = initial_position
 
 
-
 class OBJECT_OT_parent_planes_to_bones(Operator):
     """Parent planes to bones"""
     bl_idname = "rigging.parent_planes_to_bones"
@@ -194,6 +198,73 @@ class OBJECT_OT_parent_planes_to_bones(Operator):
     
     def execute(self, context):
         parent_planes_to_bones(self, context)
+
+        return {'FINISHED'}
+
+def create_visibility_drivers(obj, arm, prop_name, value):
+    for path in ("hide", "hide_render"):
+        driver = obj.driver_add(path)
+        driver.driver.expression = 'vis != %s' % value
+        vis_var = driver.driver.variables.new()
+        vis_var.name = "vis"
+        vis_var.type = "SINGLE_PROP"
+        target = vis_var.targets[0]
+        target.id = arm
+        target.data_path = '["%s"]' % prop_name
+
+def find_bone_children(arm, bone_name):
+    return [child for child in arm.children if child.parent_bone == bone_name]
+
+class OBJECT_OT_add_new_variations(Operator):
+    """Parent planes to bones"""
+    bl_idname = "rigging.add_new_plane_variations"
+    bl_label = "Add new plane variations"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(self, context):
+        return context.object and context.object.type == 'ARMATURE'
+    
+    def execute(self, context):
+        arm = context.object
+        planes = context.selected_objects
+        planes.remove(arm)
+        # plane = plane[0]
+        pbone = context.active_pose_bone
+
+        # Check if custom prop exists in armature object, else create it
+        prop_name = "variation_{}".format(pbone.name[4:])
+        # Set up custom properties
+        if not prop_name in arm:
+            prop = rna_idprop_ui_prop_get(arm, prop_name, create=True)
+            arm[prop_name] = 0
+            prop["soft_min"] = 0
+            prop["soft_max"] = 0
+            prop["min"] = 0
+            prop["max"] = 0
+
+            # Find existing child, create driver on it
+            child = find_bone_children(arm, pbone.name)[0]
+            create_visibility_drivers(child, arm, prop_name, 0)
+        else:
+            prop = rna_idprop_ui_prop_get(arm, prop_name)
+
+        # Do the parenting
+        initial_position = arm.data.pose_position
+        arm.data.pose_position = 'REST'
+        context.scene.update()
+
+        for plane in planes:
+            prop["soft_max"] += 1
+            prop["max"] += 1
+
+            do_parenting(arm, pbone, plane)
+
+            # Create driver
+            create_visibility_drivers(plane, arm, prop_name, prop["max"])
+            for group in arm.users_group:
+                group.objects.link(plane)
+        arm.data.pose_position = initial_position
 
         return {'FINISHED'}
 
@@ -230,17 +301,43 @@ class VIEW3D_PT_parent_planes_to_bones(bpy.types.Panel):
         col.active = obj is not None
         col.operator("rigging.parent_planes_to_bones")
         col.operator("rigging.unparent_planes_from_bones")
+        col = self.layout.column(align=True)
+        col.operator("rigging.add_new_plane_variations")
+
+
+class VIEW3D_PT_rig_plane_variations(bpy.types.Panel):
+    bl_label = "Rig Plane Variations"
+    bl_category = 'Tools'
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    
+    @classmethod
+    def poll(self, context):
+        return context.object and context.object.type == 'ARMATURE' and "rig_id" in context.object.data
+
+    def draw(self, context):
+        obj = context.active_object
+        col = self.layout.column(align=True)
+        # col.active = obj is not None
+        for p in obj.keys():
+            if p.startswith('variation_'):
+                col.prop(obj, '["%s"]' % p, text=p[10:])
+
 
 def register():
     bpy.utils.register_class(OBJECT_OT_parent_planes_to_bones)
     bpy.utils.register_class(OBJECT_OT_unparent_planes_from_bones)
+    bpy.utils.register_class(OBJECT_OT_add_new_variations)
     bpy.utils.register_class(VIEW3D_PT_parent_planes_to_bones)
+    bpy.utils.register_class(VIEW3D_PT_rig_plane_variations)
 
 
 def unregister():
     bpy.utils.unregister_class(OBJECT_OT_parent_planes_to_bones)
     bpy.utils.unregister_class(OBJECT_OT_unparent_planes_from_bones)
+    bpy.utils.unregister_class(OBJECT_OT_add_new_variations)
     bpy.utils.unregister_class(VIEW3D_PT_parent_planes_to_bones)
+    bpy.utils.unregister_class(VIEW3D_PT_rig_plane_variations)
 
 
 if __name__ == "__main__":
