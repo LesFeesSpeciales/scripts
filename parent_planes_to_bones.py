@@ -227,7 +227,7 @@ class OBJECT_OT_add_new_plane_variations(Operator):
     
     def execute(self, context):
         arm = context.object
-        planes = context.selected_objects
+        planes = sorted(context.selected_objects, key=lambda obj: obj.name)
         planes.remove(arm)
         # plane = plane[0]
         pbone = context.active_pose_bone
@@ -318,25 +318,29 @@ class OBJECT_OT_remove_plane_variation(Operator):
             plane.hide = False
             plane.hide_render = False
 
-            # Decrement other children's values
-            pbone = plane.parent_bone
-            siblings = find_bone_children(arm, pbone).remove(plane)
-            if siblings:
-                for other in siblings:
-                    other_val = get_prop_value(other)
-                    if other_val > prop_value:
-                        set_prop_value(other, other_val-1)
+            # The next lines are a bad idea, leaving them for reference
+            # If one removes a variation and slides bigger ones down, animation is messed up...
+            # TODO I need to find empty variations instead
 
-            # Decrement max prop value
-            prop_name = "variation_{}".format(pbone[4:])
-            prop = rna_idprop_ui_prop_get(arm, prop_name)
-            prop["soft_max"] -= 1
-            prop["max"] -= 1
+            # # Decrement other children's values
+            # pbone = plane.parent_bone
+            # siblings = find_bone_children(arm, pbone).remove(plane)
+            # if siblings:
+            #     for other in siblings:
+            #         other_val = get_prop_value(other)
+            #         if other_val > prop_value:
+            #             set_prop_value(other, other_val-1)
 
-            # Delete it if there are no variations
-            if prop["max"] == 0:
+            # # Decrement max prop value
+            # prop_name = "variation_{}".format(pbone[4:])
+            # prop = rna_idprop_ui_prop_get(arm, prop_name)
+            # prop["soft_max"] -= 1
+            # prop["max"] -= 1
 
-                del arm[prop_name]
+            # # Delete it if there are no variations
+            # if prop["max"] == 0:
+
+            #     del arm[prop_name]
 
             mat = plane.matrix_world
             plane.parent = None
@@ -401,10 +405,14 @@ class VIEW3D_PT_rig_plane_variations(bpy.types.Panel):
     def draw(self, context):
         obj = context.active_object
         col = self.layout.column(align=True)
-        # col.active = obj is not None
+        var_num = 0
         for p in obj.keys():
             if p.startswith('variation_'):
                 col.prop(obj, '["%s"]' % p, text=p[10:])
+                var_num += 1
+        if not var_num:
+            col.label("No variation found")
+            col.label("for this rig.")
 
 
 def register():
