@@ -44,6 +44,7 @@ import bpy
 import re
 from bpy.types import Operator
 from rna_prop_ui import rna_idprop_ui_prop_get
+from uuid import uuid4
 # from mathutils import Matrix
 
 #obj = bpy.context.object
@@ -66,7 +67,7 @@ SUFFIX_HIERARCHY = {
     ".R": "_droit"
 }
 
-def do_parenting(arm, bone, plane, plane_meshes=None):
+def do_parenting(arm, bone, plane, grp, plane_meshes=None):
     mat = plane.matrix_world.copy()
 
     plane.parent = arm
@@ -88,6 +89,13 @@ def do_parenting(arm, bone, plane, plane_meshes=None):
     #     print(plane.name)
     plane.matrix_world = arm.matrix_world * parent_pbone.matrix
 
+    # Assign uuid to plane object
+    if not "db_uuid" in plane:
+        plane["db_uuid"] = str(uuid4())
+    # Add plane to group
+    if not plane.name in grp.objects:
+        grp.objects.link(plane)
+
     return plane_meshes
 
 def parent_planes_to_bones(self, context):
@@ -95,6 +103,22 @@ def parent_planes_to_bones(self, context):
     initial_position = arm.data.pose_position
     arm.data.pose_position = 'REST'
     context.scene.update()
+
+    # Assign uuid to armature object
+    if not "db_uuid" in arm:
+        arm["db_uuid"] = str(uuid4())
+
+    # Group
+    if not arm.name in bpy.data.groups:
+        grp = bpy.data.groups.new(arm.name)
+    else:
+        grp = bpy.data.groups[arm.name]
+
+    if not "db_uuid" in grp:
+        grp["db_uuid"] = str(uuid4())
+    
+    if not arm.name in grp.objects:
+        grp.objects.link(arm)
 
     plane_meshes = []
     for b in arm.data.bones:
@@ -166,10 +190,16 @@ def parent_planes_to_bones(self, context):
                     continue
                 p = bpy.data.objects[bone_name.replace(' ', '_')]
 
-            plane_meshes = do_parenting(arm, b, p, plane_meshes)
+            plane_meshes = do_parenting(arm, b, p, grp, plane_meshes)
 
 #                print("Could not connect", s.name)
     arm.data.pose_position = initial_position
+
+    # uuid in texts
+    for txt in bpy.data.texts:
+        if txt.name.startswith('rig_ui') and not "db_uuid" in txt:
+            txt["db_uuid"] = str(uuid4())
+
 
 def unparent_planes_from_bones(self, context):
     arm = context.object
@@ -257,11 +287,13 @@ class OBJECT_OT_add_new_plane_variations(Operator):
         arm.data.pose_position = 'REST'
         context.scene.update()
 
+        grp = arm.users_group[0]
+
         for plane in planes:
             prop["soft_max"] += 1
             prop["max"] += 1
 
-            do_parenting(arm, pbone, plane)
+            do_parenting(arm, pbone, grp, plane)
 
             # Create driver
             create_visibility_drivers(plane, arm, prop_name, prop["max"])
