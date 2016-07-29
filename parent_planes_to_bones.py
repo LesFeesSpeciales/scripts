@@ -37,7 +37,7 @@ bl_info = {
     "description": "",
     "warning": "",
     "wiki_url": "",
-    "category": "Rigging",
+    "category": "LFS",
     }
 
 import bpy
@@ -218,7 +218,7 @@ def unparent_planes_from_bones(self, context):
 
 class OBJECT_OT_parent_planes_to_bones(Operator):
     """Parent planes to bones"""
-    bl_idname = "rigging.parent_planes_to_bones"
+    bl_idname = "lfs.parent_planes_to_bones"
     bl_label = "Parent planes to bones"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -247,7 +247,7 @@ def find_bone_children(arm, bone_name):
 
 class OBJECT_OT_add_new_plane_variations(Operator):
     """Parent planes to bones"""
-    bl_idname = "rigging.add_new_plane_variations"
+    bl_idname = "lfs.add_new_plane_variations"
     bl_label = "Add new plane variations"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -320,7 +320,7 @@ def set_prop_value(obj, prop_value):
     
 class OBJECT_OT_remove_plane_variation(Operator):
     """Parent planes to bones"""
-    bl_idname = "rigging.remove_plane_variation"
+    bl_idname = "lfs.remove_plane_variation"
     bl_label = "Remove plane variations"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -378,18 +378,39 @@ class OBJECT_OT_remove_plane_variation(Operator):
             plane.parent = None
             plane.matrix_world = mat
 
-            
+        return {'FINISHED'}
 
+
+class OBJECT_OT_add_uuid(Operator):
+    """Parent planes to bones"""
+    bl_idname = "lfs.add_uuid"
+    bl_label = "Add UUIDS"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(self, context):
+        return context.object
+    
+    def execute(self, context):
+        for obj in bpy.context.visible_objects:
+            if not 'db_uuid' in obj:
+                obj['db_uuid'] = str(uuid4())
+
+        for txt in bpy.data.texts:
+            if txt.name.startswith('rig_ui') and not 'db_uuid' in txt:
+                txt['db_uuid'] = str(uuid4())
+
+        for grp in bpy.data.groups:
+            if not 'db_uuid' in grp:
+                grp['db_uuid'] = str(uuid4())
 
         return {'FINISHED'}
 
 
 
-
-
 class OBJECT_OT_unparent_planes_from_bones(Operator):
     """Parent planes to bones"""
-    bl_idname = "rigging.unparent_planes_from_bones"
+    bl_idname = "lfs.unparent_planes_from_bones"
     bl_label = "Unparent planes from bones"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -408,6 +429,8 @@ class VIEW3D_PT_parent_planes_to_bones(bpy.types.Panel):
     bl_category = 'Tools'
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
+    bl_category = "LFS"
+
     
     # @classmethod
     # def poll(self, context):
@@ -417,11 +440,13 @@ class VIEW3D_PT_parent_planes_to_bones(bpy.types.Panel):
         obj = context.active_object
         col = self.layout.column(align=True)
         # col.active = obj is not None
-        col.operator("rigging.parent_planes_to_bones")
-        col.operator("rigging.unparent_planes_from_bones")
+        col.operator("lfs.parent_planes_to_bones")
+        col.operator("lfs.unparent_planes_from_bones")
         col = self.layout.column(align=True)
-        col.operator("rigging.add_new_plane_variations")
-        col.operator("rigging.remove_plane_variation")
+        col.operator("lfs.add_new_plane_variations")
+        col.operator("lfs.remove_plane_variation")
+        col = self.layout.column(align=True)
+        col.operator("lfs.add_uuid")
 
 
 class VIEW3D_PT_rig_plane_variations(bpy.types.Panel):
@@ -448,21 +473,23 @@ class VIEW3D_PT_rig_plane_variations(bpy.types.Panel):
 
 
 def register():
-    bpy.utils.register_class(OBJECT_OT_parent_planes_to_bones)
-    bpy.utils.register_class(OBJECT_OT_unparent_planes_from_bones)
-    bpy.utils.register_class(OBJECT_OT_add_new_plane_variations)
-    bpy.utils.register_class(OBJECT_OT_remove_plane_variation)
-    bpy.utils.register_class(VIEW3D_PT_parent_planes_to_bones)
-    bpy.utils.register_class(VIEW3D_PT_rig_plane_variations)
+    bpy.utils.register_module(__name__)
+    # bpy.utils.register_class(OBJECT_OT_parent_planes_to_bones)
+    # bpy.utils.register_class(OBJECT_OT_unparent_planes_from_bones)
+    # bpy.utils.register_class(OBJECT_OT_add_new_plane_variations)
+    # bpy.utils.register_class(OBJECT_OT_remove_plane_variation)
+    # bpy.utils.register_class(VIEW3D_PT_parent_planes_to_bones)
+    # bpy.utils.register_class(VIEW3D_PT_rig_plane_variations)
 
 
 def unregister():
-    bpy.utils.unregister_class(OBJECT_OT_parent_planes_to_bones)
-    bpy.utils.unregister_class(OBJECT_OT_unparent_planes_from_bones)
-    bpy.utils.unregister_class(OBJECT_OT_add_new_plane_variations)
-    bpy.utils.unregister_class(OBJECT_OT_remove_plane_variation)
-    bpy.utils.unregister_class(VIEW3D_PT_parent_planes_to_bones)
-    bpy.utils.unregister_class(VIEW3D_PT_rig_plane_variations)
+    bpy.utils.unregister_module(__name__)
+    # bpy.utils.unregister_class(OBJECT_OT_parent_planes_to_bones)
+    # bpy.utils.unregister_class(OBJECT_OT_unparent_planes_from_bones)
+    # bpy.utils.unregister_class(OBJECT_OT_add_new_plane_variations)
+    # bpy.utils.unregister_class(OBJECT_OT_remove_plane_variation)
+    # bpy.utils.unregister_class(VIEW3D_PT_parent_planes_to_bones)
+    # bpy.utils.unregister_class(VIEW3D_PT_rig_plane_variations)
 
 
 if __name__ == "__main__":
