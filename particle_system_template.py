@@ -174,7 +174,6 @@ class SimulationPanel(bpy.types.Panel):
         column.prop(scene.particle_simulation_settings, "start_frame")
         column.prop(scene.particle_simulation_settings, "end_frame")
         column.prop(scene.particle_simulation_settings, "scale")
-        column.prop(scene.particle_simulation_settings, "end_frame")
         column = layout.column(align=True)
         column.prop_search(scene.particle_simulation_settings, "instance", scene, "objects")
         
