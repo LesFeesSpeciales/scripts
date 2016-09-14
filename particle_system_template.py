@@ -30,6 +30,7 @@
 
 import bpy
 from mathutils import Vector, noise
+from time import time
 
 '''
 Template for a particle system
@@ -52,7 +53,7 @@ class Particle_system:
         self.particles = []
         
         bpy.ops.mesh.primitive_ico_sphere_add(location=(0,0,0))
-        self.instance_obj = bpy.data.objects[bpy.context.scene.particles_instance]
+        self.instance_obj = bpy.data.objects[bpy.context.scene.particle_simulation_settings.instance]
         self.instance_mesh = self.instance_obj.data
         
         
@@ -136,12 +137,12 @@ def main(context):
             bpy.context.scene.objects.unlink(o)
             bpy.data.objects.remove(o)
     
-    number = bpy.context.scene.particles_number
-    start_frame = bpy.context.scene.particles_start_frame
-    end_frame = bpy.context.scene.particles_end_frame
-    scale = bpy.context.scene.particles_scale
+    number = bpy.context.scene.particle_simulation_settings.number
+    start_frame = bpy.context.scene.particle_simulation_settings.start_frame
+    end_frame = bpy.context.scene.particle_simulation_settings.end_frame
+    scale = bpy.context.scene.particle_simulation_settings.scale
     a_ps = Particle_system()
-    a_ps.add_particles(number)
+    a_ps.add_particle(number)
     
     print('\n---')
     start = time()
@@ -169,11 +170,13 @@ class SimulationPanel(bpy.types.Panel):
 #        layout.label(text=" Simple Row:")
 
         column = layout.column(align=True)
-        column.prop(scene, "particles_number")
-        column.prop(scene, "particles_start_frame")
-        column.prop(scene, "particles_end_frame")
+        column.prop(scene.particle_simulation_settings, "number")
+        column.prop(scene.particle_simulation_settings, "start_frame")
+        column.prop(scene.particle_simulation_settings, "end_frame")
+        column.prop(scene.particle_simulation_settings, "scale")
+        column.prop(scene.particle_simulation_settings, "end_frame")
         column = layout.column(align=True)
-        column.prop_search(scene, "particles_instance", scene, "objects")
+        column.prop_search(scene.particle_simulation_settings, "instance", scene, "objects")
         
         layout.separator()
         
@@ -195,11 +198,15 @@ class ParticlesOperator(bpy.types.Operator):
         return {'FINISHED'}
 
 def register():
-    bpy.types.Scene.particles_number = bpy.props.IntProperty(name='Number Of Particles', description='Number Of Particles', min=1, soft_max=1000, default = 100)
-    bpy.types.Scene.particles_start_frame = bpy.props.IntProperty(name='Start Frame', description='Start Frame', min=0, soft_max=1000, default = 1)
-    bpy.types.Scene.particles_end_frame = bpy.props.IntProperty(name='End Frame', description='End Frame', min=1, soft_max=1000, default = 100)
-    bpy.types.Scene.particles_instance = bpy.props.StringProperty(name='Instance Object', description='Instance Object', default='')
-    
+    class ParticleSimulationSettings(bpy.types.PropertyGroup):
+        number = bpy.props.IntProperty(name='Number Of Particles', description='Number Of Particles', min=1, soft_max=1000, default = 100)
+        start_frame = bpy.props.IntProperty(name='Start Frame', description='Start Frame', min=0, soft_max=1000, default = 1)
+        end_frame = bpy.props.IntProperty(name='End Frame', description='End Frame', min=1, soft_max=1000, default = 100)
+        scale = bpy.props.FloatProperty(name='Particle Scale', description='Particle Scale', min=0.0, soft_max=1000.0, default = 1.0)
+        instance = bpy.props.StringProperty(name='Instance Object', description='Instance Object', default='')
+        
+    bpy.utils.register_class(ParticleSimulationSettings)
+    bpy.types.Scene.particle_simulation_settings = bpy.props.PointerProperty(type=ParticleSimulationSettings)
     bpy.utils.register_module(__name__)
 
 def unregister():
