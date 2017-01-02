@@ -76,74 +76,53 @@ class IMPORT_OT_Camera_Plane(bpy.types.Operator, ImportHelper):
 
         selected = context.selected_objects
 
-        # Enable import images addon
-        dir, file = os.path.split(self.filepath)
-        try:
-            bpy.ops.import_image.to_plane(
-                files=[{"name": file}],
-                directory=dir,
-                use_transparency=True,
-                use_shadeless=True,
-                transparency_method='Z_TRANSPARENCY')
-        except AttributeError:
-            self.report(
-                {'ERROR'},
-                'Addon Import Images As Planes not loaded. Please load it.')
-            return {'CANCELLED'}
-        plane = context.active_object
-        # Scale factor: Import images addon imports images with a height of 1
-        # this scales it back to a width of 1
-        scale_factor = plane.dimensions[0]
-        for v in plane.data.vertices:
-            #scale_factor = v.co[0]
-            v.co /= scale_factor
-        plane.parent = cam
-        plane.matrix_world = cam.matrix_world
-        plane.lock_location = (True,)*3
-        plane.lock_rotation = (True,)*3
-        plane.lock_scale    = (True,)*3
+        files = [os.path.basename(f.name) for f in self.files]
+        for i, f in enumerate(files):
+            try:
+                bpy.ops.import_image.to_plane(
+                    files=[{"name": f}],
+                    directory=self.directory,
+                    use_transparency=True,
+                    use_shadeless=True,
+                    transparency_method='Z_TRANSPARENCY')
+            except AttributeError:
+                self.report(
+                    {'ERROR'},
+                    'Addon Import Images As Planes not loaded. '
+                    'Please load it.')
+                return {'CANCELLED'}
+            plane = context.active_object
+            # Scale factor: Import images addon imports
+            # images with a height of 1
+            # this scales it back to a width of 1
+            scale_factor = plane.dimensions[0]
+            for v in plane.data.vertices:
+                #scale_factor = v.co[0]
+                v.co /= scale_factor
+            plane.parent = cam
+            plane.matrix_world = cam.matrix_world
+            plane.lock_location = (True,)*3
+            plane.lock_rotation = (True,)*3
+            plane.lock_scale =    (True,)*3
 
-        # Custom properties
-        prop = rna_idprop_ui_prop_get(plane, "distance", create=True)
-        plane["distance"] = 25.0
-        prop["soft_min"] = 0
-        prop["soft_max"] = 10000
-        prop["min"] = 0
-        prop["max"] = 1000
+            # Custom properties
+            prop = rna_idprop_ui_prop_get(plane, "distance", create=True)
+            plane["distance"] = 25.0 - i*0.1  # Multiple planes spacing
+            prop["soft_min"] = 0
+            prop["soft_max"] = 10000
+            prop["min"] = 0
+            prop["max"] = 1000
 
-        prop = rna_idprop_ui_prop_get(plane, "passepartout", create=True)
-        plane["passepartout"] = 1.1318359375
-        prop["soft_min"] = 0
-        prop["soft_max"] = 100
-        prop["min"] = 0
-        prop["max"] = 100
+            prop = rna_idprop_ui_prop_get(plane, "passepartout", create=True)
+            plane["passepartout"] = 1.1318359375
+            prop["soft_min"] = 0
+            prop["soft_max"] = 100
+            prop["min"] = 0
+            prop["max"] = 100
 
-        # DRIVERS
-        ## DISTANCE ##
-        driver = plane.driver_add('location', 2)
-
-        # driver type
-        driver.driver.type = 'SCRIPTED'
-
-        # enable Debug Info
-        driver.driver.show_debug_info = True
-
-        var = driver.driver.variables.new()
-
-        # variable name
-        var.name = "distance"
-
-        # variable type
-        var.type = 'SINGLE_PROP'
-        var.targets[0].id = plane
-        var.targets[0].data_path = '["distance"]'
-
-        # Expression
-        driver.driver.expression = "-distance"
-
-        # SCALE X AND Y
-        for axis in range(2):
-            driver = plane.driver_add('scale', axis)
+            # DRIVERS
+            ## DISTANCE ##
+            driver = plane.driver_add('location', 2)
 
             # driver type
             driver.driver.type = 'SCRIPTED'
@@ -151,36 +130,60 @@ class IMPORT_OT_Camera_Plane(bpy.types.Operator, ImportHelper):
             # enable Debug Info
             driver.driver.show_debug_info = True
 
-            # Variable DISTANCE
             var = driver.driver.variables.new()
+
             # variable name
             var.name = "distance"
+
             # variable type
             var.type = 'SINGLE_PROP'
             var.targets[0].id = plane
             var.targets[0].data_path = '["distance"]'
 
-            # Variable FOV
-            var = driver.driver.variables.new()
-            # variable name
-            var.name = "FOV"
-            # variable type
-            var.type = 'SINGLE_PROP'
-            var.targets[0].id_type = "CAMERA"
-            var.targets[0].id = cam.data
-            var.targets[0].data_path = 'angle'
-
-            # Variable passepartout
-            var = driver.driver.variables.new()
-            # variable name
-            var.name = "passepartout"
-            # variable type
-            var.type = 'SINGLE_PROP'
-            var.targets[0].id = plane
-            var.targets[0].data_path = '["passepartout"]'
-
             # Expression
-            driver.driver.expression = "tan(FOV/2) * distance*2 * passepartout"
+            driver.driver.expression = "-distance"
+
+            # SCALE X AND Y
+            for axis in range(2):
+                driver = plane.driver_add('scale', axis)
+
+                # driver type
+                driver.driver.type = 'SCRIPTED'
+
+                # enable Debug Info
+                driver.driver.show_debug_info = True
+
+                # Variable DISTANCE
+                var = driver.driver.variables.new()
+                # variable name
+                var.name = "distance"
+                # variable type
+                var.type = 'SINGLE_PROP'
+                var.targets[0].id = plane
+                var.targets[0].data_path = '["distance"]'
+
+                # Variable FOV
+                var = driver.driver.variables.new()
+                # variable name
+                var.name = "FOV"
+                # variable type
+                var.type = 'SINGLE_PROP'
+                var.targets[0].id_type = "CAMERA"
+                var.targets[0].id = cam.data
+                var.targets[0].data_path = 'angle'
+
+                # Variable passepartout
+                var = driver.driver.variables.new()
+                # variable name
+                var.name = "passepartout"
+                # variable type
+                var.type = 'SINGLE_PROP'
+                var.targets[0].id = plane
+                var.targets[0].data_path = '["passepartout"]'
+
+                # Expression
+                driver.driver.expression = \
+                    "tan(FOV/2) * distance*2 * passepartout"
 
         return {'FINISHED'}
 
