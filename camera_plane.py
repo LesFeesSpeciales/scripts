@@ -72,9 +72,9 @@ class IMPORT_OT_Camera_Plane(bpy.types.Operator, ImportHelper):
 
     def build_camera_plane(self, context):
         # Selection Camera
-        cam = context.scene.camera
+        cam = context.active_object
 
-        selected = context.selected_objects
+        # selected = context.selected_objects
 
         files = [os.path.basename(f.name) for f in self.files]
         for i, f in enumerate(files):
