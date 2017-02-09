@@ -54,7 +54,7 @@ def visualize_size(name, basedir):
     max_size = 0
 
     for file in os.listdir(basedir):
-        frame_number = int(rexp.findall(file)[0])
+        frame_number = int(rexp.findall(file)[-1])
         if int(frame_number) > max_frame:
             max_frame = frame_number
 
