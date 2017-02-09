@@ -178,14 +178,3 @@ def unregister():
 
 if __name__ == "__main__":
     register()
-
-#for dir, shot in {
-#                  '/u/production/Antarctica/52/Antigel/P01/Anim/Output/v04': 'Antigel',
-#                  '/u/production/Antarctica/52/Carte/P01/COMPO_52/IN/Qarnot/Rendus4k_Texte_Wireframe_v03': 'Carte_Trucs',
-#                  '/u/production/Antarctica/90/CIRCUMPOLAIRE/P01/Anim/output/v16': 'Circum',
-#                  '/u/production/Antarctica/90/CIRCUMPOLAIRE/P01/Anim/output/v16_rubans/rubans_chauds': 'Circum_rubans',
-#                  '/u/production/Antarctica/90/CIRCUMPOLAIRE/P01/Anim/output/v17_rubans/rubans_chauds': 'Circum_rubans_v17',
-#                  '/u/production/Antarctica/90/THERMOHALIN/P01/Anim/Spherique/Output/V17': 'Thermo',
-#                  '/u/production/Antarctica/90/THERMOHALIN/P01/Anim/Spherique/Output/V17_rubans': 'Thermo_rubans',
-#                  }.items():
-#    visualize_sizes(shot, dir)
