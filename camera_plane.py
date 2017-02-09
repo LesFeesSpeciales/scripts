@@ -100,6 +100,7 @@ class IMPORT_OT_Camera_Plane(bpy.types.Operator, ImportHelper):
                 #scale_factor = v.co[0]
                 v.co /= scale_factor
             plane.parent = cam
+            plane.show_wire = True
             plane.matrix_world = cam.matrix_world
             plane.lock_location = (True,)*3
             plane.lock_rotation = (True,)*3
