@@ -1,32 +1,24 @@
 # Copyright Les Fees Speciales 2015
-# 
+#
 # voeu@les-fees-speciales.coop
-# 
-# This software is governed by the CeCILL license under French law and
-# abiding by the rules of distribution of free software.  You can  use, 
-# modify and/ or redistribute the software under the terms of the CeCILL
-# license as circulated by CEA, CNRS and INRIA at the following URL
-# "http://www.cecill.info". 
-# 
-# As a counterpart to the access to the source code and  rights to copy,
-# modify and redistribute granted by the license, users are provided only
-# with a limited warranty  and the software's author,  the holder of the
-# economic rights,  and the successive licensors  have only  limited
-# liability. 
-# 
-# In this respect, the user's attention is drawn to the risks associated
-# with loading,  using,  modifying and/or developing or reproducing the
-# software by the user in light of its specific status of free software,
-# that may mean  that it is complicated to manipulate,  and  that  also
-# therefore means  that it is reserved for developers  and  experienced
-# professionals having in-depth computer knowledge. Users are therefore
-# encouraged to load and test the software's suitability as regards their
-# requirements in conditions enabling the security of their systems and/or 
-# data to be ensured and,  more generally, to use and operate it in the 
-# same conditions as regards security. 
-# 
-# The fact that you are presently reading this means that you have had
-# knowledge of the CeCILL license and that you accept its terms.
+#
+# ##### BEGIN GPL LICENSE BLOCK #####
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software Foundation,
+#  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#
+# ##### END GPL LICENSE BLOCK #####
 
 bl_info = {
     "name": "Proxy Images",
@@ -50,23 +42,23 @@ def proxify(img):
 #            print(img['original'])
             original = bpy.data.images[img['original']]
             deproxify(img)
-            
+
             proxify(img)
         else:
             return
-        
+
     if img.source == 'FILE' and img.size[0] > bpy.context.scene.proxy_width_threshold:
         #ignore images which are already proxies
         img_orig = img.copy()
         img_orig.use_fake_user = True
         img_orig['is_proxy'] = False
         img_orig.name = img.name + "_orig"
-        
+
         img['is_proxy'] = True
         img['original'] = img_orig.name
         img['use_alpha'] = img_orig.use_alpha
         img.use_alpha = True
-        
+
         dest = bpy.context.scene.proxy_destination
         w, h = img.size
         h *= dest/w
@@ -79,7 +71,7 @@ def proxify(img):
         path = os.path.join(path, 'proxy', filename)
         img.save_render(path, scene=bpy.context.scene)
         img.filepath = path
-        
+
         img.reload()
 
 def get_selected_images():
@@ -90,7 +82,7 @@ def get_selected_images():
                 if tex is not None and tex.texture.type == 'IMAGE' and tex.texture.image is not None:
                     images_selected.add(tex.texture.image)
     return images_selected
-    
+
 
 class ImageProxify(bpy.types.Operator):
     """Resize large images for performance"""
@@ -99,15 +91,15 @@ class ImageProxify(bpy.types.Operator):
 
     def execute(self, context):
         images_to_process = get_selected_images() if bpy.context.scene.proxy_only_selected else bpy.data.images
-        
+
         number_imgs = len(images_to_process)
-        
+
         for i, img in enumerate(images_to_process):
             print("Proxy: processing image {:03} of {:03} : {}".format(i+1, number_imgs, img.name))
             proxify(img)
         print("Proxy: done.")
         return {'FINISHED'}
-    
+
 def deproxify(img):
     if 'is_proxy' in img:
         if img['is_proxy']:
@@ -122,7 +114,7 @@ def deproxify(img):
             img.name += '_garbage'
             img.user_clear()
             bpy.data.images.remove(img)
-    
+
 
 class ImageDeProxify(bpy.types.Operator):
     """Reset proxy images to their original side"""
@@ -136,14 +128,14 @@ class ImageDeProxify(bpy.types.Operator):
                 displayed_img = area.spaces.active.image
                 if displayed_img is not None and 'is_proxy' in displayed_img and not displayed_img['is_proxy']:# and not displayed_img['is_proxy']:
                     area.spaces.active.image = None
-        
+
         images_to_process = get_selected_images() if bpy.context.scene.proxy_only_selected else bpy.data.images
         number_imgs = len(images_to_process)
         for i, img in enumerate(images_to_process):
             print("Deproxy: processing image {:03} of {:03} : {}".format(i+1, number_imgs, img.name))
             deproxify(img)
         return {'FINISHED'}
-            
+
 class ImageProxyPanel(bpy.types.Panel):
     """Image proxy panel"""
     bl_label = "Image proxy"
@@ -163,7 +155,7 @@ class ImageProxyPanel(bpy.types.Panel):
         col.prop(scene, "proxy_destination")
         col.prop(scene, "proxy_only_selected")
         col.separator()
-        
+
         col = layout.column(align=True)
         col.operator("image.proxify")
         col.operator("image.deproxify")
@@ -178,7 +170,7 @@ class ImageProxyPanel(bpy.types.Panel):
         else:
             col.label("This image is a proxy.")
         col.label("Its width is %s pixels" % img.size[0])
-            
+
 def register():
     bpy.types.Scene.proxy_width_threshold = bpy.props.IntProperty(name='Width threshold', description='Resize images if wider than this', min=1, soft_max=4096, default = 1024)
     bpy.types.Scene.proxy_destination = bpy.props.IntProperty(name='Destination width', description='Resize images to this width', min=1, soft_max=4096, default = 1024)
@@ -197,4 +189,3 @@ def unregister():
 
 if __name__ == "__main__":
     register()
-

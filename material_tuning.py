@@ -1,4 +1,6 @@
-# Copyright Les Fees Speciales 2016
+# Copyright Les Fees Speciales 2017
+#
+# voeu@les-fees-speciales.coop
 #
 # ##### BEGIN GPL LICENSE BLOCK #####
 #
