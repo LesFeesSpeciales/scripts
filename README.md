@@ -41,6 +41,9 @@ Create proxy images to enhance performance in scenes containing a large number o
 #### Shape to bone
 Transfer a mesh object's shape to the active bone in Pose Mode. Automatically creates a `WGT_` object instance.
 
+![Shape To Bone selection](docs/shape_to_bone.png "Shape To Bone selection")  
+To apply a shape, select a mesh object, then the armature. In *Pose Mode*, select the bone you wish to apply the shape to. The mesh shape will be transferred to the bone in its current position.
+
 ---
 ### Simulation
 #### Particle system template
