@@ -1,4 +1,4 @@
-# scripts
+# LFS Blender Scripts
 
 Various Blender scripts, used in production or proof of concepts.
 
@@ -9,12 +9,22 @@ This script generates a curve in the 3D view based on a file sequence present in
 ---
 ### Layout
 #### Camera plane
-Import an image and parent it to the camera. You can then set the distance and width from the image object's properties. The plane will adjust to the camera's FOV.
+Import an image and parent it to the camera. You can then set the distance and width from the image object's properties. The plane will adjust to the camera's FOV or focal length.  
+You can easily import several images at once, which will be equally spaced in depth. This is useful when creating painted stage-like sets which need to stick to a camera.
+
+![Plane settings](docs/camera_plane_props.png "Camera Custom Properties")  
+Two settings are available upon selecting a plane:
+* `distance` is the distance from the camera to the plane
+* `passepartout` is an additional scale for the plane
+
+![Focal 1](docs/camera_plane_focal1.png "Focal 1")  
+![Focal 2](docs/camera_plane_focal2.png "Focal 2")  
+Two focal settings with the same plane.
 
 ---
 ### Material
 #### Material tuning
-Change some material properties. Useful for recoloring textures on multiple objects at the same time (eg. add a globally darker shade to a character in a given shot). Blender Internal only.
+Change some material properties. Useful for recolorizing textures on multiple objects at the same time (eg. add a globally darker shade to a character in a given shot). Blender Internal only.
 
 #### Proxify
 Create proxy images to enhance performance in scenes containing a large number of large textures.
