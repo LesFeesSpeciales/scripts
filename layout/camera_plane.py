@@ -75,8 +75,10 @@ class IMPORT_OT_Camera_Plane(bpy.types.Operator, ImportHelper):
                     files=[{"name": f}],
                     directory=self.directory,
                     use_transparency=True,
-                    use_shadeless=True,
-                    transparency_method='Z_TRANSPARENCY')
+                    shader='SHADELESS',
+                    # use_shadeless=True,
+                    # transparency_method='Z_TRANSPARENCY'
+                    )
             except AttributeError:
                 self.report(
                     {'ERROR'},
