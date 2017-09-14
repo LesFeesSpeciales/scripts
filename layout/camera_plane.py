@@ -24,7 +24,7 @@ bl_info = {
     "name": "Create Camera Plane",
     "author": "Les Fees Speciales",
     "version": (1, 0),
-    "blender": (2, 75, 0),
+    "blender": (2, 79, 0),
     "location": "Camera > Camera Plane",
     "description": "Imports image and sticks it to the camera",
     "warning": "",
