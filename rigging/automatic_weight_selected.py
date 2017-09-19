@@ -1,4 +1,22 @@
-import bpy
+'''
+Copyright (C) 2017 Les Fees Speciales
+voeu@les-fees-speciales.coop
+
+Created by Les Fees Speciales
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+'''
 
 bl_info = {
     "name": "Automatic Weight Selected",
@@ -10,7 +28,9 @@ bl_info = {
     "warning": "Add",
     "wiki_url": "",
     "category": "Paint" }
-    
+
+import bpy
+
 def_bones = {}
 
 def main(self, context):
@@ -19,7 +39,7 @@ def main(self, context):
     arm_obj = set(context.selected_objects)
     arm_obj.discard(obj)
     arm_obj = tuple(arm_obj)[0]
-    
+
     for pb in arm_obj.pose.bones:
         # Store DEF setting
         def_bones[pb.name] = pb.bone.use_deform
@@ -27,18 +47,18 @@ def main(self, context):
             pb.bone.use_deform = False
         else:
             if not pb.bone.use_deform:
-                self.report({'INFO'}, 'Bonet %s is non-deforming.' % pb.name)
-    
+                self.report({'INFO'}, 'Bone %s is non-deforming.' % pb.name)
+
     # Automatic weight
     bpy.ops.paint.weight_from_bones(type='AUTOMATIC')
-    
+
     # Restore DEF setting
     for pb in arm_obj.pose.bones:
         pb.bone.use_deform = def_bones[pb.name]
     def_bones.clear()
-    
+
     print("DONE")
-    
+
 class AutomaticWeightSelected(bpy.types.Operator):
     bl_idname = "paint.automatic_weight_selected"
     bl_label = "Automatic Weight Selected"
@@ -48,13 +68,12 @@ class AutomaticWeightSelected(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         return (context.mode == 'PAINT_WEIGHT'
-#                and context.object.type == 'MESH'
                 and len(context.selected_objects) == 2)
 
     def execute(self, context):
         main(self, context)
         return {"FINISHED"}
-        
+
 def weight_tools_panel(self, context):
     layout = self.layout
     layout.operator("paint.automatic_weight_selected")

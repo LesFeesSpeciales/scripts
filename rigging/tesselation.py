@@ -19,16 +19,16 @@ Created by Les Fees Speciales
 '''
 
 bl_info = {
-    "name": "Pantin Tools",
-    "description": "",
-    "author": "Les Fees Speciales",
+    "name": "Plane tesselation",
+    "description": "Tesselate textured planes based on image. BI only. ",
+    "author": "Les Fées Speciales",
     "version": (0, 0, 1),
     "blender": (2, 79, 0),
     "location": "View3D",
-    "warning": "",
-    "wiki_url": "",
+    "warning": "Needs a custom version of triangle. See README for more info",
+    "wiki_url": "https://github.com/LesFeesSpeciales/LFS-blender-scripts",
     "category": "Rigging" }
-    
+
 
 import numpy as np
 from scipy import misc, spatial
@@ -53,7 +53,7 @@ def main(context):
         total += (v2[0] - verts[0][0]) * (v2[1] + verts[0][1])
 
         return (total <= 0)
-    
+
     def get_contours(contours, tolerance=0.0005):
         '''Concatenate a list of contours and approximate it if possible'''
         global_contour = {'vertices': [],
@@ -68,14 +68,14 @@ def main(context):
             c -= padding # Remove padding
             for axis in range(2):
                 c[..., axis] *= (shape[axis] + padding*2) / shape[axis] # Scale back to pre-padding on each axis
-            c /= np.array(padded_array.shape)  # Divide to get a 1x1 square. 
+            c /= np.array(padded_array.shape)  # Divide to get a 1x1 square.
             c[..., 1] *= shape[1] / shape[0]   # Get aspect ratio back
 
             # Simplify polygon
             c = measure.approximate_polygon(c, tolerance)
 
             global_contour['vertices'].extend(c)
-            
+
             for pt_i in range(len(c)-1):
                 global_contour['segments'].append(
                     [pt_i + previous_region_index, pt_i + previous_region_index + 1]
@@ -83,19 +83,19 @@ def main(context):
             global_contour['segments'].append([len(c) - 1 + previous_region_index, previous_region_index])
 
             previous_region_index += len(c)
-            
+
             # Add hole if polygon ccw
             if is_polygon_clockwise(c):
                 c_ar = np.array(c)
                 global_contour['holes'].append([c_ar[..., 0].mean(), c_ar[..., 1].mean()])
                 # TODO: find point inside concave polygons
-        
+
         if not global_contour['holes']:
             del global_contour['holes']
         return global_contour
-        
+
     for obj_orig in context.selected_objects:
-        
+
         print(obj_orig.name)
 
         if obj_orig.type != 'MESH':
@@ -122,7 +122,7 @@ def main(context):
         padded_array[padding:shape[0]+padding, padding:shape[1]+padding] = gimg
 
         contours = measure.find_contours(padded_array, 0.2)
-        
+
         global_contour = get_contours(contours)
         res = triangle.triangulate(global_contour, opts='piqa0.0005')
         if not 'segments' in res:
@@ -139,7 +139,7 @@ def main(context):
         # Plane object original coordinates
         blv = obj_orig.data.vertices[3].co.xz # bottom left in 3D
         trv = obj_orig.data.vertices[1].co.xz # top right
-        
+
         for v_co in res['vertices']:
             x = v_co[1] * shape[0] / shape[1]
             y = (1-v_co[0])
@@ -196,7 +196,7 @@ class CutPlanes(bpy.types.Operator):
     def execute(self, context):
         main(context)
         return {"FINISHED"}
-        
+
 class CutOut(bpy.types.Panel):
     bl_idname = "cut_out"
     bl_label = "Cut Out"
@@ -207,7 +207,7 @@ class CutOut(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         layout.operator("object.cut_planes")
-        
+
 def register():
     bpy.utils.register_module(__name__)
 
@@ -216,4 +216,3 @@ def unregister():
 
 if __name__ == "__main__":
     register()
-    
