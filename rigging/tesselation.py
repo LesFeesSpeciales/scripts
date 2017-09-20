@@ -94,7 +94,7 @@ def main(context):
         if not global_contour['holes']:
             del global_contour['holes']
         return global_contour
-    
+
     def get_plane_matrix(ob, poly_index=0):
         """Get object's polygon local matrix from uvs.
         This will only work if uvs occupy all space, to get bounds"""
@@ -103,18 +103,18 @@ def main(context):
                 p0 = p_i
             elif p.uv == Vector((1, 0)):
                 px = p_i
-            elif p.uv == Vector((1, 1)): # Why would this work? Should be (0, 1). But it seems to work...
+            elif p.uv == Vector((0, 1)):
                 py = p_i
 
-        p0 = ob.data.vertices[p0].co
-        px = ob.data.vertices[px].co - p0
-        py = ob.data.vertices[py].co - p0
+        p0 = ob.data.vertices[ob.data.loops[p0].vertex_index].co
+        px = ob.data.vertices[ob.data.loops[px].vertex_index].co - p0
+        py = ob.data.vertices[ob.data.loops[py].vertex_index].co - p0
 
         rot_mat = Matrix((px, py, px.cross(py))).transposed().to_4x4()
         trans_mat = Matrix.Translation(p0)
         mat = trans_mat * rot_mat
-        
-        print("mat =", repr(mat))
+
+        print("mat =", repr(ob.matrix_world * mat))
 
         return mat
 
@@ -160,10 +160,6 @@ def main(context):
 
         bm = bmesh.new()
 
-#        # Plane object original coordinates
-#        blv = obj_orig.data.vertices[3].co.xz # bottom left in 3D
-#        trv = obj_orig.data.vertices[1].co.xz # top right
-
         for v_co in res['vertices']:
             x = v_co[1] * shape[0] / shape[1]
             y = (1-v_co[0])
@@ -200,9 +196,6 @@ def main(context):
         mat = get_plane_matrix(obj_orig)
         for v in bm.verts:
             v.co = mat * v.co
-#            v.co.z = mat
-#            v.co.x = blv.x + v.co.x * (trv.x - blv.x)
-#            v.co.z = blv.y + v.co.z * (trv.y - blv.y)
 
         bm.to_mesh(mesh)
         mesh.update()
@@ -214,7 +207,7 @@ class CutPlanes(bpy.types.Operator):
     bl_idname = "object.cut_planes"
     bl_label = "Cut Planes"
     bl_description = ""
-    bl_options = {"REGISTER"}
+    bl_options = {"REGISTER", "UNDO"}
 
     @classmethod
     def poll(cls, context):
