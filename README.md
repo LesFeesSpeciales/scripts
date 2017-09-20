@@ -13,6 +13,7 @@ Various Blender scripts, used in production or proof of concepts.
   * [Proxify](#proxify)
 * [Rigging](#rigging)
   * [Shape to bone](#shape-to-bone)
+  * [Tesselation](#tesselation)
 * [Simulation](#simulation)
   * [Particle system template](#particle-system-template)
     * [Fourmis](#fourmis)
@@ -59,6 +60,12 @@ Transfer a mesh object's shape to the active bone in Pose Mode. Automatically cr
 
 ![Shape To Bone selection](docs/shape_to_bone.png "Shape To Bone selection")  
 To apply a shape, select a mesh object, then the armature. In *Pose Mode*, select the bone you wish to apply the shape to. The mesh shape will be transferred to the bone in its current position.
+
+#### Tesselation
+Automatically tesselate an image plane for later skinning.  
+This add-on requires [scipy](https://www.scipy.org/) and [skimage](http://scikit-image.org/), as well as [triangle](http://dzhelil.info/triangle/), available from the [pypi](https://pypi.python.org/pypi/triangle/). This library needs to be compiled against the same Python version as Blender. In Linux this may involve compiling Python, and a virtual environment. Please contact us for assistance!
+
+![Tesselation before](docs/tesselation_before.png "Tesselation before") ![Tesselation after](docs/tesselation_after.png "Tesselation after")  
 
 ---
 ### Simulation

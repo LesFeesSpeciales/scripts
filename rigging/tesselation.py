@@ -37,6 +37,7 @@ import triangle
 
 import bpy
 import bmesh
+from mathutils import Vector, Matrix
 
 import os
 
@@ -93,6 +94,29 @@ def main(context):
         if not global_contour['holes']:
             del global_contour['holes']
         return global_contour
+    
+    def get_plane_matrix(ob, poly_index=0):
+        """Get object's polygon local matrix from uvs.
+        This will only work if uvs occupy all space, to get bounds"""
+        for p_i, p in enumerate(ob.data.uv_layers.active.data):
+            if p.uv == Vector((0, 0)):
+                p0 = p_i
+            elif p.uv == Vector((1, 0)):
+                px = p_i
+            elif p.uv == Vector((1, 1)): # Why would this work? Should be (0, 1). But it seems to work...
+                py = p_i
+
+        p0 = ob.data.vertices[p0].co
+        px = ob.data.vertices[px].co - p0
+        py = ob.data.vertices[py].co - p0
+
+        rot_mat = Matrix((px, py, px.cross(py))).transposed().to_4x4()
+        trans_mat = Matrix.Translation(p0)
+        mat = trans_mat * rot_mat
+        
+        print("mat =", repr(mat))
+
+        return mat
 
     for obj_orig in context.selected_objects:
 
@@ -136,15 +160,15 @@ def main(context):
 
         bm = bmesh.new()
 
-        # Plane object original coordinates
-        blv = obj_orig.data.vertices[3].co.xz # bottom left in 3D
-        trv = obj_orig.data.vertices[1].co.xz # top right
+#        # Plane object original coordinates
+#        blv = obj_orig.data.vertices[3].co.xz # bottom left in 3D
+#        trv = obj_orig.data.vertices[1].co.xz # top right
 
         for v_co in res['vertices']:
             x = v_co[1] * shape[0] / shape[1]
             y = (1-v_co[0])
             # Create vertex
-            bm.verts.new([x, 0, y])
+            bm.verts.new([x, y, 0])
 
         bm.verts.ensure_lookup_table()
         bm.verts.index_update()
@@ -170,12 +194,15 @@ def main(context):
         for f in bm.faces:
             for l in f.loops:
                 luv = l[uv_layer]
-                luv.uv = l.vert.co.xz
+                luv.uv = l.vert.co.xy
 
         # Transform verts to mesh coordinates
+        mat = get_plane_matrix(obj_orig)
         for v in bm.verts:
-            v.co.x = blv.x + v.co.x * (trv.x - blv.x)
-            v.co.z = blv.y + v.co.z * (trv.y - blv.y)
+            v.co = mat * v.co
+#            v.co.z = mat
+#            v.co.x = blv.x + v.co.x * (trv.x - blv.x)
+#            v.co.z = blv.y + v.co.z * (trv.y - blv.y)
 
         bm.to_mesh(mesh)
         mesh.update()
