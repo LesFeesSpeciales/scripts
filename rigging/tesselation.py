@@ -217,9 +217,9 @@ class CutPlanes(bpy.types.Operator):
         main(context)
         return {"FINISHED"}
 
-class CutOut(bpy.types.Panel):
-    bl_idname = "cut_out"
-    bl_label = "Cut Out"
+class Tesselation(bpy.types.Panel):
+    bl_idname = "tesselation"
+    bl_label = "Tesselation"
     bl_space_type = "VIEW_3D"
     bl_region_type = "TOOLS"
     bl_category = "Tools"
