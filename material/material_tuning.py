@@ -171,12 +171,29 @@ class CopyTuningToSelected(bpy.types.Operator):
     bl_label = "Copy To Selected"
     bl_options = {"REGISTER", "UNDO"}
 
+    to_pantin = bpy.props.BoolProperty()
+
     @classmethod
     def poll(cls, context):
         return context.object is not None
 
     def execute(self, context):
-        dest_objects = context.selected_objects
+        if self.to_pantin:
+            if not "asset_uuid" in context.object:
+                self.report({"ERROR"}, "Active object is not part of a pantin")
+                return {"CANCELLED"}
+            else:
+                dest_objects = []
+                # Get pantin
+                for pantin in context.scene.imported_items:
+                    if pantin.asset_uuid == context.object["asset_uuid"]:
+                        break
+                for db in pantin.datablocks:
+                    if (db.db_name in bpy.data.objects
+                            and bpy.data.objects[db.db_name].type == 'MESH'):
+                        dest_objects.append(bpy.data.objects[db.db_name])
+        else:
+            dest_objects = context.selected_objects
         copy_to_selected(context.object, dest_objects)
         return {"FINISHED"}
 
@@ -376,7 +393,10 @@ class MaterialTuningPanel(bpy.types.Panel):
 
                 col = layout.column(align=True)
                 col.separator()
-                col.operator('lfs.tuning_copy_to_selected')
+                col.operator('lfs.tuning_copy_to_selected').to_pantin = False
+                if 'import_pantin_from_lib' in bpy.context.user_preferences.addons:
+                    col.operator('lfs.tuning_copy_to_selected',
+                                 text="Copy To Pantin").to_pantin = True
                 # col = layout.column()
                 # if not bpy.data.filepath:
                 #     col.label(icon='ERROR', text='Please save file first')
@@ -393,7 +413,6 @@ def register():
 def unregister():
     bpy.utils.unregister_module(__name__)
 
+
 if __name__ == "__main__":
     register()
-
-#setup_node_tree(bpy.context.object)
