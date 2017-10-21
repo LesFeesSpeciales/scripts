@@ -159,9 +159,9 @@ class IMPORT_OT_Camera_Plane(bpy.types.Operator, ImportHelper):
                 var.name = "FOV"
                 # variable type
                 var.type = 'SINGLE_PROP'
-                var.targets[0].id_type = "CAMERA"
-                var.targets[0].id = cam.data
-                var.targets[0].data_path = 'angle'
+                var.targets[0].id_type = "OBJECT"
+                var.targets[0].id = cam
+                var.targets[0].data_path = 'data.angle'
 
                 # Variable passepartout
                 var = driver.driver.variables.new()
