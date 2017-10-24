@@ -127,7 +127,7 @@ def main(context):
         b_img = b_tex.image
 
         fimg = np.array(b_img.pixels).reshape([b_img.size[1], b_img.size[0], 4])
-        fimg = np.flip(fimg, 0) # flip along y axis
+        fimg = np.flipud(fimg) # flip along y axis
 
         gimg = fimg[..., 3]
 
