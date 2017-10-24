@@ -38,6 +38,8 @@ Two settings are available upon selecting a plane:
 ![Focal 2](docs/camera_plane_focal2.png "Focal 2")  
 Two focal settings with the same plane.
 
+Please see [this article](http://la-cuisine.les-fees-speciales.coop/2017/10/21/cameraplane-a-tool-for-2d-sets/) for a more in-depth overview of the tool.
+
 ---
 ### Material
 #### Material tuning
