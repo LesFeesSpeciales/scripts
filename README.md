@@ -38,7 +38,7 @@ Two settings are available upon selecting a plane:
 ![Focal 2](docs/camera_plane_focal2.png "Focal 2")  
 Two focal settings with the same plane.
 
-Please see [this article](http://la-cuisine.les-fees-speciales.coop/2017/10/21/cameraplane-a-tool-for-2d-sets/) for a more in-depth overview of the tool.
+Please see [this article](http://lacuisine.tech/2017/10/21/cameraplane-a-tool-for-2d-sets/) for a more in-depth overview of the tool.
 
 ---
 ### Material
@@ -65,7 +65,7 @@ To apply a shape, select a mesh object, then the armature. In *Pose Mode*, selec
 
 #### Tesselation
 Automatically tesselate an image plane for later skinning.  
-This add-on requires [scipy](https://www.scipy.org/) and [skimage](http://scikit-image.org/), as well as [triangle](http://dzhelil.info/triangle/), available from the [pypi](https://pypi.python.org/pypi/triangle/). This library needs to be compiled against the same Python version as Blender. In Linux this may involve compiling Python, and a virtual environment. An article explaining the precess is available [here](http://la-cuisine.les-fees-speciales.coop/2017/10/20/how-to-install-python-libs-in-blender-part-2/), but feel free to contact us for assistance!
+This add-on requires [scipy](https://www.scipy.org/) and [skimage](http://scikit-image.org/), as well as [triangle](http://dzhelil.info/triangle/), available from the [pypi](https://pypi.python.org/pypi/triangle/). This library needs to be compiled against the same Python version as Blender. In Linux this may involve compiling Python, and a virtual environment. An article explaining the precess is available [here](http://lacuisine.tech/2017/10/20/how-to-install-python-libs-in-blender-part-2/), but feel free to contact us for assistance!
 
 ![Tesselation before](docs/tesselation_before.png "Tesselation before") ![Tesselation after](docs/tesselation_after.png "Tesselation after")  
 
