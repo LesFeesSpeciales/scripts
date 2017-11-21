@@ -1,25 +1,30 @@
-# Copyright (C) 2017 Les Fees Speciales
+# Copyright Les Fees Speciales 2016
+#
 # voeu@les-fees-speciales.coop
 #
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+# ##### BEGIN GPL LICENSE BLOCK #####
 #
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
 #
-#    You should have received a copy of the GNU General Public License along
-#    with this program; if not, write to the Free Software Foundation, Inc.,
-#    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software Foundation,
+#  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#
+# ##### END GPL LICENSE BLOCK #####
 
 
 bl_info = {
-    "name": "Shape To Bone",
+    "name": "Mesh To Bone Shape",
     "author": "Les fees speciales",
-    "version": (0, 1, 2),
+    "version": (0, 1, 3),
     "blender": (2, 75, 0),
     "location": "View 3D > Tools",
     "description": "Use selected object as the shape for active bone.",
@@ -60,11 +65,11 @@ def main(context):
         v.co = (context.object.matrix_world * pbone.matrix * b_length).inverted() * obj.matrix_world * v.co
 
 
-class ShapeToBone(bpy.types.Operator):
+class MeshToBoneShape(bpy.types.Operator):
     """Reposition selected mesh so that the active bone takes the mesh as custom shape.
     You need to be in pose mode with a mesh object selected."""
-    bl_idname = "pose.shape_to_bone"
-    bl_label = "Shape To Bone"
+    bl_idname = "pose.mesh_to_bone_shape"
+    bl_label = "Mesh To Bone Shape"
 
     @classmethod
     def poll(cls, context):
@@ -108,9 +113,9 @@ class EditBoneShape(bpy.types.Operator):
         edit_bone_shape(context)
         return {'FINISHED'}
 
-class ShapeToBonePanel(bpy.types.Panel):
-    """Shape To Bone"""
-    bl_label = "Shape To Bone"
+class MeshToBoneShapePanel(bpy.types.Panel):
+    """Mesh To Bone Shape"""
+    bl_label = "Mesh To Bone Shape"
     bl_idname = "SCENE_PT_shape_bone"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
@@ -123,19 +128,19 @@ class ShapeToBonePanel(bpy.types.Panel):
         if len(context.selected_objects) != 2:
             col.label('Please select one mesh object,', icon='ERROR')
             col.label('then the bone in Pose Mode')
-        col.operator("pose.shape_to_bone")
+        col.operator("pose.mesh_to_bone_shape")
         col.operator("pose.edit_bone_shape")
 
 def register():
-    bpy.utils.register_class(ShapeToBone)
+    bpy.utils.register_class(MeshToBoneShape)
     bpy.utils.register_class(EditBoneShape)
-    bpy.utils.register_class(ShapeToBonePanel)
+    bpy.utils.register_class(MeshToBoneShapePanel)
 
 
 def unregister():
     bpy.utils.unregister_class(EditBoneShape)
-    bpy.utils.unregister_class(ShapeToBone)
-    bpy.utils.unregister_class(ShapeToBonePanel)
+    bpy.utils.unregister_class(MeshToBoneShape)
+    bpy.utils.unregister_class(MeshToBoneShapePanel)
 
 
 if __name__ == "__main__":

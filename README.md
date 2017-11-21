@@ -12,7 +12,7 @@ Various Blender scripts, used in production or proof of concepts.
   * [Material tuning](#material-tuning)
   * [Proxify](#proxify)
 * [Rigging](#rigging)
-  * [Shape to bone](#shape-to-bone)
+  * [Mesh To Bone Shape](#mesh-to-bone-shape)
   * [Tesselation](#tesselation)
 * [Simulation](#simulation)
   * [Particle system template](#particle-system-template)
@@ -57,10 +57,10 @@ Create proxy images to enhance performance in scenes containing a large number o
 
 ---
 ### Rigging
-#### Shape to bone
+#### Mesh To Bone Shape
 Transfer a mesh object's shape to the active bone in Pose Mode. Automatically creates a `WGT_` object instance.
 
-![Shape To Bone selection](docs/shape_to_bone.png "Shape To Bone selection")  
+![Mesh To Bone Shape selection](docs/shape_to_bone.png "Mesh To Bone Shape selection")  
 To apply a shape, select a mesh object, then the armature. In *Pose Mode*, select the bone you wish to apply the shape to. The mesh shape will be transferred to the bone in its current position.
 
 #### Tesselation
