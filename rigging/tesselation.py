@@ -184,6 +184,7 @@ def main(context):
 
         # UVs
         uv_layer = bm.loops.layers.uv.verify()
+        uv_layer_name = uv_layer.name
         bm.faces.layers.tex.verify()
         for f in bm.faces:
             for l in f.loops:
@@ -200,6 +201,10 @@ def main(context):
 
         obj_orig.data = mesh
         mesh.name = obj_orig.data.name
+
+        # Assign image to UV layer
+        for d in mesh.uv_textures[uv_layer_name].data:
+            d.image = b_img
 
 class CutPlanes(bpy.types.Operator):
     bl_idname = "object.cut_planes"
