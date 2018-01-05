@@ -44,7 +44,7 @@ class IMPORT_OT_Camera_Plane(bpy.types.Operator, ImportHelper):
     '''Build a camera plane'''
     bl_idname = "camera.camera_plane_build"
     bl_label = "Build Camera Plane"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'PRESET', 'REGISTER', 'UNDO'}
     _context_path = "object.data"
     _property_type = bpy.types.Camera
 
@@ -57,6 +57,25 @@ class IMPORT_OT_Camera_Plane(bpy.types.Operator, ImportHelper):
         maxlen=1024,
         subtype='FILE_PATH',
         options={'HIDDEN', 'SKIP_SAVE'})
+    passepartout = FloatProperty(
+        name='Passepartout',
+        default=100.0,
+        soft_min=0,
+        soft_max=500,
+        min=0,
+        max=500,
+        subtype='PERCENTAGE',
+    )
+    distance = FloatProperty(
+        name='Distance',
+        default=25.0,
+        soft_min=0,
+        soft_max=10000,
+        min=0,
+        max=1000,
+        subtype='DISTANCE',
+        unit='LENGTH'
+    )
 
     def build_camera_plane(self, context):
         # Selection Camera
@@ -98,18 +117,19 @@ class IMPORT_OT_Camera_Plane(bpy.types.Operator, ImportHelper):
 
             # Custom properties
             prop = rna_idprop_ui_prop_get(plane, "distance", create=True)
-            plane["distance"] = 25.0 - i*0.1  # Multiple planes spacing
+            plane["distance"] = self.distance - i*0.1  # Multiple planes spacing
             prop["soft_min"] = 0
             prop["soft_max"] = 10000
             prop["min"] = 0
             prop["max"] = 1000
+            prop["default"] = 100
 
             prop = rna_idprop_ui_prop_get(plane, "passepartout", create=True)
-            plane["passepartout"] = 1.0
+            plane["passepartout"] = self.passepartout
             prop["soft_min"] = 0
-            prop["soft_max"] = 100
+            prop["soft_max"] = 1000
             prop["min"] = 0
-            prop["max"] = 100
+            prop["max"] = 1000
 
             # DRIVERS
             ## DISTANCE ##
@@ -121,12 +141,9 @@ class IMPORT_OT_Camera_Plane(bpy.types.Operator, ImportHelper):
             # enable Debug Info
             driver.driver.show_debug_info = True
 
+            # Variable
             var = driver.driver.variables.new()
-
-            # variable name
             var.name = "distance"
-
-            # variable type
             var.type = 'SINGLE_PROP'
             var.targets[0].id = plane
             var.targets[0].data_path = '["distance"]'
@@ -146,18 +163,14 @@ class IMPORT_OT_Camera_Plane(bpy.types.Operator, ImportHelper):
 
                 # Variable DISTANCE
                 var = driver.driver.variables.new()
-                # variable name
                 var.name = "distance"
-                # variable type
                 var.type = 'SINGLE_PROP'
                 var.targets[0].id = plane
                 var.targets[0].data_path = '["distance"]'
 
                 # Variable FOV
                 var = driver.driver.variables.new()
-                # variable name
                 var.name = "FOV"
-                # variable type
                 var.type = 'SINGLE_PROP'
                 var.targets[0].id_type = "OBJECT"
                 var.targets[0].id = cam
@@ -165,16 +178,14 @@ class IMPORT_OT_Camera_Plane(bpy.types.Operator, ImportHelper):
 
                 # Variable passepartout
                 var = driver.driver.variables.new()
-                # variable name
                 var.name = "passepartout"
-                # variable type
                 var.type = 'SINGLE_PROP'
                 var.targets[0].id = plane
                 var.targets[0].data_path = '["passepartout"]'
 
                 # Expression
                 driver.driver.expression = \
-                    "tan(FOV/2) * distance*2 * passepartout"
+                    "tan(FOV/2) * distance*2 * passepartout/100.0"
 
         return {'FINISHED'}
 
