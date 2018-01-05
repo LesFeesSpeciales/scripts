@@ -44,7 +44,7 @@ class IMPORT_OT_Camera_Plane(bpy.types.Operator, ImportHelper):
     '''Build a camera plane'''
     bl_idname = "camera.camera_plane_build"
     bl_label = "Build Camera Plane"
-    bl_options = {'PRESET', 'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO'}
     _context_path = "object.data"
     _property_type = bpy.types.Camera
 
@@ -57,15 +57,22 @@ class IMPORT_OT_Camera_Plane(bpy.types.Operator, ImportHelper):
         maxlen=1024,
         subtype='FILE_PATH',
         options={'HIDDEN', 'SKIP_SAVE'})
-    passepartout = FloatProperty(
+    passepartout = EnumProperty(
         name='Passepartout',
-        default=100.0,
-        soft_min=0,
-        soft_max=500,
-        min=0,
-        max=500,
-        subtype='PERCENTAGE',
+        items=(('16_9', '16 : 9', '16 : 9'),
+               ('16_10', '16 : 10', '16 : 10')),
+        default='16_9',
+        # options={'HIDDEN'},
     )
+    # passepartout = FloatProperty(
+    #     name='Passepartout',
+    #     default=100.0,
+    #     soft_min=0,
+    #     soft_max=500,
+    #     min=0,
+    #     max=500,
+    #     subtype='PERCENTAGE',
+    # )
     distance = FloatProperty(
         name='Distance',
         default=25.0,
@@ -124,8 +131,15 @@ class IMPORT_OT_Camera_Plane(bpy.types.Operator, ImportHelper):
             prop["max"] = 1000
             prop["default"] = 100
 
+            if self.passepartout == '16_9':
+                passepartout = 100 * (1 + 400 / 2400)
+            elif self.passepartout == '16_10':
+                passepartout = 100 * (1 + 400 / 2560)
+            else:
+                passepartout = 100.0
+
             prop = rna_idprop_ui_prop_get(plane, "passepartout", create=True)
-            plane["passepartout"] = self.passepartout
+            plane["passepartout"] = passepartout
             prop["soft_min"] = 0
             prop["soft_max"] = 1000
             prop["min"] = 0
