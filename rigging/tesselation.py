@@ -39,7 +39,7 @@ from mathutils import Vector, Matrix
 
 import os
 
-def main(context):
+def main(context, cut_type):
     def is_polygon_clockwise(verts):
         '''Direction of a 2D polygon
         return: is_cw (bool)
@@ -153,8 +153,8 @@ def main(context):
             global_contour = get_contours(contours, 0.0001)
             res = triangle.triangulate(global_contour, opts='piqa0.0005')
 
-        mesh = bpy.data.meshes.new(obj_orig.data.name)
-        mesh.materials.append(obj_orig.active_material)
+        mesh = obj_orig.data
+        mat = get_plane_matrix(obj_orig)
 
         bm = bmesh.new()
 
@@ -192,19 +192,12 @@ def main(context):
                 luv.uv = l.vert.co.xy
 
         # Transform verts to mesh coordinates
-        mat = get_plane_matrix(obj_orig)
         for v in bm.verts:
             v.co = mat * v.co
 
         bm.to_mesh(mesh)
         mesh.update()
 
-        obj_orig.data = mesh
-        mesh.name = obj_orig.data.name
-
-        # Assign image to UV layer
-        for d in mesh.uv_textures[uv_layer_name].data:
-            d.image = b_img
 
 class CutPlanes(bpy.types.Operator):
     bl_idname = "object.cut_planes"
@@ -212,12 +205,14 @@ class CutPlanes(bpy.types.Operator):
     bl_description = ""
     bl_options = {"REGISTER", "UNDO"}
 
+    cut_type = bpy.props.StringProperty(default='TESSELATE')
+
     @classmethod
     def poll(cls, context):
         return context.selected_objects
 
     def execute(self, context):
-        main(context)
+        main(context, self.cut_type)
         return {"FINISHED"}
 
 class Tesselation(bpy.types.Panel):
@@ -229,7 +224,9 @@ class Tesselation(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.operator("object.cut_planes")
+        col = layout.column(align=True)
+        col.operator("object.cut_planes", text='Contours').cut_type='CONTOURS'
+        col.operator("object.cut_planes", text='Tesselate').cut_type='TESSELATE'
 
 def register():
     bpy.utils.register_module(__name__)
