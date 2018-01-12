@@ -39,6 +39,8 @@ from mathutils import Vector, Matrix
 
 import os
 
+PADDING = 2
+
 def main(context, cut_type):
     def is_polygon_clockwise(verts):
         '''Direction of a 2D polygon
@@ -55,18 +57,21 @@ def main(context, cut_type):
 
     def get_contours(contours, tolerance=0.0005):
         '''Concatenate a list of contours and approximate it if possible'''
-        global_contour = {'vertices': [],
-                          'segments': [],
-                          'holes':    [],
+        global_contour = {'vertices':  [],
+                          'segments':  [],
+                          'holes':     [],
+                          'triangles': [],
                           }
 
         previous_region_index = 0
+        vertex_index = 0
 
         for c in contours:
+            triangle = []
             c = c.copy()
-            c -= padding # Remove padding
+            c -= PADDING # Remove padding
             for axis in range(2):
-                c[..., axis] *= (shape[axis] + padding*2) / shape[axis] # Scale back to pre-padding on each axis
+                c[..., axis] *= (shape[axis] + PADDING*2) / shape[axis] # Scale back to pre-padding on each axis
             c /= np.array(padded_array.shape)  # Divide to get a 1x1 square.
             c[..., 1] *= shape[1] / shape[0]   # Get aspect ratio back
 
@@ -79,7 +84,11 @@ def main(context, cut_type):
                 global_contour['segments'].append(
                     [pt_i + previous_region_index, pt_i + previous_region_index + 1]
                 )
+                if cut_type == 'CONTOURS':
+                    triangle.append(pt_i + previous_region_index)
             global_contour['segments'].append([len(c) - 1 + previous_region_index, previous_region_index])
+            if cut_type == 'CONTOURS':
+                global_contour['triangles'].append(triangle)
 
             previous_region_index += len(c)
 
@@ -89,8 +98,9 @@ def main(context, cut_type):
                 global_contour['holes'].append([c_ar[..., 0].mean(), c_ar[..., 1].mean()])
                 # TODO: find point inside concave polygons
 
-        if not global_contour['holes']:
-            del global_contour['holes']
+        for k in ['holes', 'triangles']:
+            if not global_contour[k]:
+                del global_contour[k]
         return global_contour
 
     def get_plane_matrix(ob, poly_index=0):
@@ -112,13 +122,9 @@ def main(context, cut_type):
         trans_mat = Matrix.Translation(p0)
         mat = trans_mat * rot_mat
 
-        print("mat =", repr(ob.matrix_world * mat))
-
         return mat
 
     for obj_orig in context.selected_objects:
-
-        print(obj_orig.name)
 
         if obj_orig.type != 'MESH':
             continue
@@ -138,20 +144,22 @@ def main(context, cut_type):
 
         # Pad array
         shape = gimg.shape
-        padding = 2
-        padded_shape = (shape[0] + padding*2, shape[1] + padding*2)
+        padded_shape = (shape[0] + PADDING*2, shape[1] + PADDING*2)
         padded_array = np.zeros(padded_shape)
-        padded_array[padding:shape[0]+padding, padding:shape[1]+padding] = gimg
+        padded_array[PADDING:shape[0]+PADDING, PADDING:shape[1]+PADDING] = gimg
 
         contours = measure.find_contours(padded_array, 0.2)
 
         global_contour = get_contours(contours)
-        res = triangle.triangulate(global_contour, opts='piqa0.0005')
-        if not 'segments' in res:
-            # Retry when triangle cannot generate tesselation
-            # Why does this happen?
-            global_contour = get_contours(contours, 0.0001)
+        if cut_type == 'TESSELATE':
             res = triangle.triangulate(global_contour, opts='piqa0.0005')
+            if not 'segments' in res:
+                # Retry when triangle cannot generate tesselation
+                # Why does this happen?
+                global_contour = get_contours(contours, 0.0001)
+                res = triangle.triangulate(global_contour, opts='piqa0.0005')
+        elif cut_type == 'CONTOURS':
+            res = global_contour
 
         mesh = obj_orig.data
         mat = get_plane_matrix(obj_orig)
