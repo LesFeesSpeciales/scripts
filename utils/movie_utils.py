@@ -74,6 +74,7 @@ def convert_images(image_dir, image_name, output_dir, output_name,
 
 
 def play_file(filepath):
+    """From https://stackoverflow.com/a/435669/4561348"""
     if sys.platform.startswith('darwin'):
         subprocess.call(('open', filepath))
     elif os.name == 'nt':
