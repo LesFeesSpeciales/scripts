@@ -39,6 +39,17 @@ from datetime import datetime, date, time
 from glob import glob
 
 
+def get_root(project):
+    """LFS specific. Get root folder of a project."""
+    if platform.system() == "Windows":
+        root = "U:/" + project
+    if platform.system() == "Darwin":
+        root = "/Volumes/Production/" + project
+    if platform.system() == "Linux":
+        root = "/u/production/" + project
+    return root
+
+
 def get_scene_and_shot(filepath):
     """
     Search Scene number, Shot number for a given filename.
@@ -73,7 +84,7 @@ def get_latest_version(filepath):
     """
     # Get file name pattern from pathdir
     filedir, filename = os.path.split(filepath)
-    extension = '.' + filename.split('.')[-1]
+    extension = os.path.splitext(filename)[-1]
     root = get_root()
     try:
         pattern = filedir.split(root)[1].replace("/", "_")[1:] + "_"
