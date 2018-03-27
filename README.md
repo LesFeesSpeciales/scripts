@@ -4,6 +4,8 @@ Various Blender scripts, used in production or proof of concepts.
 
 ## Table of Contents
 
+* [3D View](#3d-view)
+  * [Image background transform](#image-background-transform)
 * [Files](#files)
   * [Filesize graph](#filesize-graph)
 * [Layout](#layout)
@@ -19,6 +21,11 @@ Various Blender scripts, used in production or proof of concepts.
     * [Fourmis](#fourmis)
 * [License](#license)
 
+### 3D View
+#### Image background transform
+Transform 3D View background images using G, R, S, similar to Blender transform tools.
+
+---
 ### Files
 #### Filesize graph
 This script generates a curve in the 3D view based on a file sequence present in the specified directory. It should be used to monitor image sequence rendering. It allows the user to quickly spot empty images, as well as some artifacts when an image has a different weight from its neighbors.
