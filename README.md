@@ -24,6 +24,11 @@ Various Blender scripts, used in production or proof of concepts.
 ### 3D View
 #### Image background transform
 Transform 3D View background images using G, R, S, similar to Blender transform tools.
+* `SHIFT` + `ALT` + `B` to start the operator, then
+* `CTRL` to snap to closest values
+* `X`/`Y` to constrain to axis
+* `SHIFT` for precision mode
+* `MOUSEWHEEL` to choose a different image
 
 ---
 ### Files
